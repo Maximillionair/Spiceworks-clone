@@ -80,8 +80,8 @@ app.use('/api/comments', commentRoutes);
 console.log('Routes mounted successfully!');
 
 // Serve frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client', 'index.ejs'));
-});
+// app.get('*', (req, res) => {
+//   res.sendFile(path.resolve(__dirname, '../', 'index'));
+// });
 
 module.exports = app;
