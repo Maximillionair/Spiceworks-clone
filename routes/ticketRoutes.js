@@ -26,12 +26,12 @@ router.route('/')
 router.route('/stats')
   .get(authorize('admin'), getTicketStats);
 
-router.route('/:id')
+router.route('/:ticketId')  // Ensure ':ticketId' matches the parameter used in your controllers
   .get(getTicket)
   .put(authorize('admin'), updateTicket);
 
 // Comment routes
-router.route('/:ticketId/comments')  // Use ticketId here to match the route parameter
+router.route('/:ticketId/comments')  // Ensure ':ticketId' matches the parameter used in your controllers
   .get(getTicketComments)
   .post(addComment);
 
