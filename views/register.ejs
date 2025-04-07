@@ -4,7 +4,7 @@
   <h2 class="text-center mb-3">Register</h2>
   <%- include('partials/alerts') %>
   
-  <form action="/api/auth/register">
+  <form action="/api/auth/register" method="POST">
     <div class="form-group">
       <label for="name" class="form-label">Full Name</label>
       <input type="text" class="form-control" id="name" name="name" required>
