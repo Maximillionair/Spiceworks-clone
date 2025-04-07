@@ -85,35 +85,37 @@ exports.getTicketComments = async (req, res, next) => {
 // @desc    Delete comment
 // @route   DELETE /api/comments/:id
 // @access  Private
+// In deleteComment method:
 exports.deleteComment = async (req, res, next) => {
-  try {
-    const comment = await Comment.findById(req.params.id);  // Keep 'id' as it's for comments
-    
-    if (!comment) {
-      return res.status(404).json({
+    try {
+      const comment = await Comment.findById(req.params.id);
+      
+      if (!comment) {
+        return res.status(404).json({
+          success: false,
+          message: `No comment found with id of ${req.params.id}`
+        });
+      }
+      
+      // Check if user is comment owner or admin
+      if (comment.user.toString() !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: `User ${req.user.id} is not authorized to delete this comment`
+        });
+      }
+      
+      // Fix: use deleteOne() instead of remove()
+      await Comment.deleteOne({ _id: req.params.id });
+      
+      res.status(200).json({
+        success: true,
+        data: {}
+      });
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: `No comment found with id of ${req.params.id}`
+        message: error.message
       });
     }
-    
-    // Check if user is comment owner or admin
-    if (comment.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: `User ${req.user.id} is not authorized to delete this comment`
-      });
-    }
-    
-    await comment.remove();
-    
-    res.status(200).json({
-      success: true,
-      data: {}
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
+  };

@@ -1,6 +1,10 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-
+// At the top of the file, add environment variable validation
+if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRE || !process.env.JWT_COOKIE_EXPIRE) {
+  console.error('JWT environment variables must be set');
+  process.exit(1);
+}
 // Set token cookie
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token
