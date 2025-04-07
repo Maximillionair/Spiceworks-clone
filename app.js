@@ -27,10 +27,11 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Prevent XSS attacks
-// app.use(xss());
+app.use(xss());
 
 // Cookie parser
 app.use(cookieParser());
+
 
 // Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -40,13 +41,13 @@ if (process.env.NODE_ENV === 'development') {
 // Security headers
 app.use(helmet());
 
-
+app.use(mongoSanitize({
+    allowDots: false,   // Avoid dot notation for query strings
+    replaceWith: '_'    // Replace potentially harmful characters
+  }));
 
 // Prevent parameter pollution
 app.use(hpp());
-
-// Sanitize data
-app.use(mongoSanitize());
 
 // Enable CORS
 app.use(cors({
