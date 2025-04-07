@@ -17,10 +17,6 @@ const authRoutes = require('./routes/authRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
-// Connect to database
-const connectDB = require('./config/db');
-connectDB();
-
 // Initialize app
 const app = express();
 
