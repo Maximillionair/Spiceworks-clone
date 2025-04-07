@@ -5,7 +5,6 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
 const hpp = require('hpp');
-const mongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
 
 // Load env vars
@@ -37,11 +36,6 @@ if (process.env.NODE_ENV === 'development') {
 
 // Security headers
 app.use(helmet());
-
-app.use(mongoSanitize({
-  allowDots: false,   // Avoid dot notation for query strings
-  replaceWith: '_'    // Replace potentially harmful characters
-}));
 
 // Prevent parameter pollution
 app.use(hpp());
