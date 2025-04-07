@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helpdesk Support System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <h1>Helpdesk Support System</h1>
+      </div>
+      <nav class="main-nav" id="main-nav">
+        <!-- Navigation links will be dynamically inserted by JavaScript -->
+      </nav>
+    </header>
+    
+    <main id="content">
+      <!-- Main content will be dynamically loaded -->
+      <div class="welcome-section">
+        <h2>Welcome to Helpdesk Support System</h2>
+        <p>Log in or register to get started.</p>
+        <div class="auth-buttons">
+          <a href="views/auth/login.html" class="btn btn-primary">Login</a>
+          <a href="views/auth/register.html" class="btn btn-secondary">Register</a>
+        </div>
+      </div>
+    </main>
+    
+    <footer>
+      <p>&copy; 2025 Helpdesk Support System</p>
+    </footer>
+  </div>
+  
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Check if user is logged in and update UI accordingly
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // Redirect to appropriate dashboard based on user role
+        checkUserRole();
+      }
+    });
+  </script>
+</body>
+</html>
