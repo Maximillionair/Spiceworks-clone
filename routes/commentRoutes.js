@@ -9,6 +9,7 @@ const router = express.Router();
 router.use(protect);
 router.use(apiLimiter);
 
-router.route('/:id').delete(deleteComment);
+// Use ticketId as the parameter here to match the routes
+router.route('/:ticketId/comments/:id').delete(deleteComment);  // Use both ticketId and commentId
 
 module.exports = router;

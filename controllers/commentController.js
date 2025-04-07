@@ -6,15 +6,15 @@ const Ticket = require('../models/ticket');
 // @access  Private
 exports.addComment = async (req, res, next) => {
   try {
-    req.body.ticket = req.params.Id;
+    req.body.ticket = req.params.ticketId;  // Change 'Id' to 'ticketId'
     req.body.user = req.user.id;
     
-    const ticket = await Ticket.findById(req.params.Id);
+    const ticket = await Ticket.findById(req.params.ticketId);  // Change 'Id' to 'ticketId'
     
     if (!ticket) {
       return res.status(404).json({
         success: false,
-        message: `No ticket found with id of ${req.params.Id}`
+        message: `No ticket found with id of ${req.params.ticketId}`  // Change 'Id' to 'ticketId'
       });
     }
     
@@ -45,12 +45,12 @@ exports.addComment = async (req, res, next) => {
 // @access  Private
 exports.getTicketComments = async (req, res, next) => {
   try {
-    const ticket = await Ticket.findById(req.params.Id);
+    const ticket = await Ticket.findById(req.params.ticketId);  // Change 'Id' to 'ticketId'
     
     if (!ticket) {
       return res.status(404).json({
         success: false,
-        message: `No ticket found with id of ${req.params.Id}`
+        message: `No ticket found with id of ${req.params.ticketId}`  // Change 'Id' to 'ticketId'
       });
     }
     
@@ -62,7 +62,7 @@ exports.getTicketComments = async (req, res, next) => {
       });
     }
     
-    const comments = await Comment.find({ ticket: req.params.Id })
+    const comments = await Comment.find({ ticket: req.params.ticketId })  // Change 'Id' to 'ticketId'
       .populate({
         path: 'user',
         select: 'name role'
@@ -87,7 +87,7 @@ exports.getTicketComments = async (req, res, next) => {
 // @access  Private
 exports.deleteComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(req.params.id);
+    const comment = await Comment.findById(req.params.id);  // Keep 'id' as it's for comments
     
     if (!comment) {
       return res.status(404).json({

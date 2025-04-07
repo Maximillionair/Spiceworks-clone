@@ -31,7 +31,7 @@ router.route('/:id')
   .put(authorize('admin'), updateTicket);
 
 // Comment routes
-router.route('/:ticketId/comments')
+router.route('/:ticketId/comments')  // Use ticketId here to match the route parameter
   .get(getTicketComments)
   .post(addComment);
 
