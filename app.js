@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Security headers
-app.use(helmet());
+// app.use(helmet());
 
 
 
@@ -68,9 +68,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Log route paths to debug
-console.log('Ticket routes:', ticketRoutes.stack);
-console.log('Comment routes:', commentRoutes.stack);
+// // Log route paths to debug
+// console.log('Ticket routes:', ticketRoutes.stack);
+// console.log('Comment routes:', commentRoutes.stack);
 
 
 console.log('Mounting routes...');
