@@ -20,6 +20,8 @@ const commentRoutes = require('./routes/commentRoutes');
 // Initialize app
 const app = express();
 
+app.set('view engine', 'ejs');
+
 // Body parser
 app.use(express.json());
 
