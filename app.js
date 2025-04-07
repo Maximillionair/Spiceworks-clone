@@ -80,6 +80,16 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/comments', commentRoutes);
 console.log('Routes mounted successfully!');
 
+app.use((req, res, next) => {
+    console.log('Request Object:', req);
+    next();
+  });
+  
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something went wrong!');
+  });
+  
 // Serve frontend
 // app.get('*', (req, res) => {
 //   res.sendFile(path.resolve(__dirname, '../', 'index'));
