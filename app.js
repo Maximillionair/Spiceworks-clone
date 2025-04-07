@@ -67,6 +67,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Log route paths to debug
+console.log('Ticket routes:', ticketRoutes.stack);
+console.log('Comment routes:', commentRoutes.stack);
+
+
 console.log('Mounting routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
