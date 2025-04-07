@@ -50,10 +50,10 @@ app.use(helmet());
 app.use(hpp());
 
 // Enable CORS
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:4000',
-  credentials: true
-}));
+// app.use(cors({
+//   origin: process.env.CLIENT_URL || 'http://localhost:4000',
+//   credentials: true
+// }));
 
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
