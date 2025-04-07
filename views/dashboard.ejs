@@ -1,133 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard - Helpdesk Support System</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/styles.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="logo">
-        <h1>Helpdesk Support System</h1>
-      </div>
-      <nav class="main-nav">
-        <ul class="nav-links">
-          <li><a href="/dashboard" class="active">Dashboard</a></li>
-          <li><a href="/tickets">My Tickets</a></li>
-          <li><a href="#" id="logout-link">Logout</a></li>
-        </ul>
-      </nav>
-    </header>
-    
-    <main>
-      <h2>User Dashboard</h2>
-      <div id="alert-container"></div>
-      
-      <div class="dashboard">
-        <div class="card stats-card">
-          <h3>My Open Tickets</h3>
-          <div class="stats-number" id="open-tickets-count">0</div>
-          <p>Tickets awaiting response</p>
-        </div>
-        
-        <div class="card stats-card">
-          <h3>In Progress</h3>
-          <div class="stats-number" id="in-progress-tickets-count">0</div>
-          <p>Tickets being worked on</p>
-        </div>
-        
-        <div class="card stats-card">
-          <h3>Resolved</h3>
-          <div class="stats-number" id="resolved-tickets-count">0</div>
-          <p>Successfully resolved tickets</p>
-        </div>
-      </div>
-      
-      <div class="card mb-3">
-        <div class="card-header">
-          <h3>Create New Support Ticket</h3>
-        </div>
-        <div class="card-body">
-          <form id="create-ticket-form">
-            <div class="form-group">
-              <label for="title" class="form-label">Title</label>
-              <input type="text" class="form-control" id="title" name="title" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="category" class="form-label">Category</label>
-              <select class="form-control" id="category" name="category" required>
-                <option value="">Select Category</option>
-                <option value="Hardware Issue">Hardware Issue</option>
-                <option value="Software Issue">Software Issue</option>
-                <option value="Network Issue">Network Issue</option>
-                <option value="Account Issue">Account Issue</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="description" class="form-label">Description</label>
-              <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
-            </div>
-            
-            <div class="form-group">
-              <button type="submit" class="btn btn-primary">Submit Ticket</button>
-            </div>
-          </form>
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">
-          <h3>Recent Tickets</h3>
-        </div>
-        <div class="card-body">
-          <ul class="ticket-list" id="recent-tickets-list">
-            <!-- Tickets will be dynamically loaded here -->
-            <li class="text-center">Loading tickets...</li>
-          </ul>
-        </div>
-        <div class="card-footer">
-          <a href="/tickets" class="btn btn-secondary">View All Tickets</a>
-        </div>
-      </div>
-    </main>
-    
-    <footer>
-      <p>&copy; 2025 Helpdesk Support System</p>
-    </footer>
+<%- include('partials/header', {title: 'User Dashboard', path: '/dashboard'}) %>
+
+<h2>User Dashboard</h2>
+<%- include('partials/alerts') %>
+
+<div class="dashboard">
+  <div class="card stats-card">
+    <h3>My Open Tickets</h3>
+    <div class="stats-number" id="open-tickets-count">0</div>
+    <p>Tickets awaiting response</p>
   </div>
   
-  <script src="/js/api.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/tickets.js"></script>
-  <script src="/js/dashboard.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Check if user is logged in
-      if (!localStorage.getItem('token')) {
-        window.location.href = '/login';
-        return;
-      }
+  <div class="card stats-card">
+    <h3>In Progress</h3>
+    <div class="stats-number" id="in-progress-tickets-count">0</div>
+    <p>Tickets being worked on</p>
+  </div>
+  
+  <div class="card stats-card">
+    <h3>Resolved</h3>
+    <div class="stats-number" id="resolved-tickets-count">0</div>
+    <p>Successfully resolved tickets</p>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3>Create New Support Ticket</h3>
+  </div>
+  <div class="card-body">
+    <form id="create-ticket-form">
+      <div class="form-group">
+        <label for="title" class="form-label">Title</label>
+        <input type="text" class="form-control" id="title" name="title" required>
+      </div>
       
-      // Load user dashboard data
-      loadUserDashboard();
+      <div class="form-group">
+        <label for="category" class="form-label">Category</label>
+        <select class="form-control" id="category" name="category" required>
+          <option value="">Select Category</option>
+          <option value="Hardware Issue">Hardware Issue</option>
+          <option value="Software Issue">Software Issue</option>
+          <option value="Network Issue">Network Issue</option>
+          <option value="Account Issue">Account Issue</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
       
-      // Load recent tickets
-      loadRecentTickets();
+      <div class="form-group">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+      </div>
       
-      // Handle ticket creation form
-      const createTicketForm = document.getElementById('create-ticket-form');
-      createTicketForm.addEventListener('submit', createTicket);
-      
-      // Handle logout
-      const logoutLink = document.getElementById('logout-link');
-      logoutLink.addEventListener('click', logoutUser);
-    });
-  </script>
-</body>
-</html>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary">Submit Ticket</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Recent Tickets</h3>
+  </div>
+  <div class="card-body">
+    <ul class="ticket-list" id="recent-tickets-list">
+      <!-- Tickets will be dynamically loaded here -->
+      <li class="text-center">Loading tickets...</li>
+    </ul>
+  </div>
+  <div class="card-footer">
+    <a href="/tickets" class="btn btn-secondary">View All Tickets</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<script src="/js/api.js" defer></script>
+<script src="/js/auth.js" defer></script>
+<script src="/js/tickets.js" defer></script>
+<script src="/js/dashboard.js" defer></script>

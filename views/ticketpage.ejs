@@ -1,105 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Tickets - Helpdesk Support System</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="../../css/styles.css">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <div class="logo">
-        <h1>Helpdesk Support System</h1>
-      </div>
-      <nav class="main-nav">
-        <ul class="nav-links">
-          <li><a href="dashboard.ejs">Dashboard</a></li>
-          <li><a href="tickets.ejs" class="active">My Tickets</a></li>
-          <li><a href="#" id="logout-link">Logout</a></li>
-        </ul>
-      </nav>
-    </header>
-    
-    <main>
-      <h2>My Support Tickets</h2>
-      <div id="alert-container"></div>
-      
-      <div class="card mb-3">
-        <div class="card-header d-flex justify-between align-center">
-          <h3>All Tickets</h3>
-          <div class="filters">
-            <select id="status-filter" class="form-control">
-              <option value="">All Statuses</option>
-              <option value="Åpen">Open</option>
-              <option value="Under arbeid">In Progress</option>
-              <option value="Løst">Resolved</option>
-            </select>
-          </div>
-        </div>
-        <div class="card-body">
-          <ul class="ticket-list" id="all-tickets-list">
-            <!-- Tickets will be dynamically loaded here -->
-            <li class="text-center">Loading tickets...</li>
-          </ul>
-        </div>
-        <div class="card-footer" id="pagination-container">
-          <!-- Pagination controls will be inserted here -->
-        </div>
-      </div>
-    </main>
-    
-    <footer>
-      <p>&copy; 2025 Helpdesk Support System</p>
-    </footer>
-  </div>
-  
-  <!-- Ticket Details Modal -->
-  <div id="ticket-detail-modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <div id="ticket-detail-content">
-        <!-- Ticket details will be dynamically loaded here -->
-      </div>
+<%- include('partials/header', {title: 'My Tickets', path: '/tickets'}) %>
+
+<h2>My Support Tickets</h2>
+<%- include('partials/alerts') %>
+
+<div class="card mb-3">
+  <div class="card-header d-flex justify-between align-center">
+    <h3>All Tickets</h3>
+    <div class="filters">
+      <select id="status-filter" class="form-control">
+        <option value="">All Statuses</option>
+        <option value="Open">Open</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
     </div>
   </div>
-  
-  <script src="../../js/api.js"></script>
-  <script src="../../js/auth.js"></script>
-  <script src="../../js/tickets.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-  // Check if user is logged in
-  if (!localStorage.getItem('token')) {
-    window.location.href = '../auth/login.html';
-    return;
-  }
-  
-  // Load all user tickets
-  loadUserTickets();
-  
-  // Handle status filter change
-  document.getElementById('status-filter').addEventListener('change', (e) => {
-    const statusFilter = e.target.value;
-    loadUserTickets(1, statusFilter);
-  });
-  
-  // Handle logout
-  document.getElementById('logout-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    logout();
-  });
-  
-  // Close modal when clicking on X
-  document.querySelector('.close').addEventListener('click', () => {
-    document.getElementById('ticket-detail-modal').style.display = 'none';
-  });
-  
-  // Close modal when clicking outside of it
-  window.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('ticket-detail-modal')) {
-      document.getElementById('ticket-detail-modal').style.display = 'none';
-    }
-  });
-});
+  <div class="card-body">
+    <ul class="ticket-list" id="all-tickets-list">
+      <!-- Tickets will be dynamically loaded here -->
+      <li class="text-center">Loading tickets...</li>
+    </ul>
+  </div>
+  <div class="card-footer" id="pagination-container">
+    <!-- Pagination controls will be inserted here -->
+  </div>
+</div>
+
+<!-- Ticket Details Modal -->
+<div id="ticket-detail-modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="ticket-detail-content">
+      <!-- Ticket details will be dynamically loaded here -->
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<script src="/js/api.js" defer></script>
+<script src="/js/auth.js" defer></script>
+<script src="/js/tickets.js" defer></script>
+<script src="/js/ticket-list.js" defer></script>
