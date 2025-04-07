@@ -14,6 +14,11 @@ const apiRequest = async (url, method = 'GET', body = null) => {
     return data;
   };
   
+  const register = async (userData) => {
+    return await apiRequest('/api/users', 'POST', userData);
+  };
+  
+
   // Fetch current user
   const getCurrentUser = async () => {
     return await apiRequest('/api/auth/me');
