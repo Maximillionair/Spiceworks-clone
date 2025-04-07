@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard - Helpdesk Support System</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
   <div class="container">
@@ -15,8 +15,8 @@
       </div>
       <nav class="main-nav">
         <ul class="nav-links">
-          <li><a href="dashboard.ejs" class="active">Dashboard</a></li>
-          <li><a href="tickets.ejs">My Tickets</a></li>
+          <li><a href="/dashboard" class="active">Dashboard</a></li>
+          <li><a href="/tickets">My Tickets</a></li>
           <li><a href="#" id="logout-link">Logout</a></li>
         </ul>
       </nav>
@@ -92,7 +92,7 @@
           </ul>
         </div>
         <div class="card-footer">
-          <a href="tickets.ejs" class="btn btn-secondary">View All Tickets</a>
+          <a href="/tickets" class="btn btn-secondary">View All Tickets</a>
         </div>
       </div>
     </main>
@@ -102,15 +102,15 @@
     </footer>
   </div>
   
-  <script src="../../js/api.js"></script>
-  <script src="../../js/auth.js"></script>
-  <script src="../../js/tickets.js"></script>
-  <script src="../../js/dashboard.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/tickets.js"></script>
+  <script src="/js/dashboard.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // Check if user is logged in
       if (!localStorage.getItem('token')) {
-        window.location.href = '../auth/login.html';
+        window.location.href = '/login';
         return;
       }
       
