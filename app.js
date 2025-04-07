@@ -49,12 +49,12 @@ app.use(mongoSanitize());
 
 // Enable CORS
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || 'http://localhost:4000',
   credentials: true
 }));
 
 // Set static folder
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Mount routers
 app.use('/api/auth', authRoutes);
@@ -63,7 +63,7 @@ app.use('/api/comments', commentRoutes);
 
 // Serve frontend
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client', 'index.html'));
+  res.sendFile(path.resolve(__dirname, '../client', 'index.ejs'));
 });
 
 // Error handling middleware
