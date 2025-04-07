@@ -56,15 +56,6 @@ app.use(cors({
 // Set static folder
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Mount routers
-app.use('/api/auth', authRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/comments', commentRoutes);
-
-// Serve frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client', 'index.ejs'));
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -74,6 +65,16 @@ app.use((err, req, res, next) => {
     success: false,
     error: err.message || 'Server Error'
   });
+});
+
+// Mount routers
+app.use('/api/auth', authRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/comments', commentRoutes);
+
+// Serve frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../client', 'index.ejs'));
 });
 
 module.exports = app;
