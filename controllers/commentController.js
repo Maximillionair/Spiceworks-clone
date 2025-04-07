@@ -6,15 +6,15 @@ const Ticket = require('../models/ticket');
 // @access  Private
 exports.addComment = async (req, res, next) => {
   try {
-    req.body.ticket = req.params.ticketId;
+    req.body.ticket = req.params.Id;
     req.body.user = req.user.id;
     
-    const ticket = await Ticket.findById(req.params.ticketId);
+    const ticket = await Ticket.findById(req.params.Id);
     
     if (!ticket) {
       return res.status(404).json({
         success: false,
-        message: `No ticket found with id of ${req.params.ticketId}`
+        message: `No ticket found with id of ${req.params.Id}`
       });
     }
     
@@ -45,12 +45,12 @@ exports.addComment = async (req, res, next) => {
 // @access  Private
 exports.getTicketComments = async (req, res, next) => {
   try {
-    const ticket = await Ticket.findById(req.params.ticketId);
+    const ticket = await Ticket.findById(req.params.Id);
     
     if (!ticket) {
       return res.status(404).json({
         success: false,
-        message: `No ticket found with id of ${req.params.ticketId}`
+        message: `No ticket found with id of ${req.params.Id}`
       });
     }
     
@@ -62,7 +62,7 @@ exports.getTicketComments = async (req, res, next) => {
       });
     }
     
-    const comments = await Comment.find({ ticket: req.params.ticketId })
+    const comments = await Comment.find({ ticket: req.params.Id })
       .populate({
         path: 'user',
         select: 'name role'
