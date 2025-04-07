@@ -1,7 +1,7 @@
 const express = require('express');
 const { register, login, logout, getMe } = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
-const { loginLimiter } = require('../middleware/rateLimiter');
+const { protect } = require('../middleware/authmiddleware');
+const { loginLimiter } = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 

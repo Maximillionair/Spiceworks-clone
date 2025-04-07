@@ -9,8 +9,8 @@ const {
 
 const { getTicketComments, addComment } = require('../controllers/commentController');
 
-const { protect, authorize } = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { protect, authorize } = require('../middleware/authmiddleware');
+const { apiLimiter } = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 

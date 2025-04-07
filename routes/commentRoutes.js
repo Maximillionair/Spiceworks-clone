@@ -1,7 +1,7 @@
 const express = require('express');
 const { deleteComment } = require('../controllers/commentController');
-const { protect } = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { protect } = require('../middleware/authmiddleware');
+const { apiLimiter } = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 
