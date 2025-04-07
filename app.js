@@ -26,7 +26,7 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Prevent XSS attacks
-app.use(xss());
+// app.use(xss());
 
 // Cookie parser
 app.use(cookieParser());
@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Security headers
-// app.use(helmet());
+app.use(helmet());
 
 
 
