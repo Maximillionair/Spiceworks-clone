@@ -67,10 +67,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Mount routers
+console.log('Mounting routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/comments', commentRoutes);
+console.log('Routes mounted successfully!');
 
 // Serve frontend
 app.get('*', (req, res) => {
