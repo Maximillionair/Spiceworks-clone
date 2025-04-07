@@ -42,12 +42,12 @@ if (process.env.NODE_ENV === 'development') {
 app.use(helmet());
 
 app.use(mongoSanitize({
-    allowDots: false,   // Avoid dot notation for query strings
-    replaceWith: '_'    // Replace potentially harmful characters
-  }));
+  allowDots: false,   // Avoid dot notation for query strings
+  replaceWith: '_'    // Replace potentially harmful characters
+}));
 
 // Prevent parameter pollution
-app.use(hpp());
+// app.use(hpp());
 
 // Enable CORS
 app.use(cors({
