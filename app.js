@@ -21,6 +21,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const app = express();
 
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'))
 
 // Body parser
 app.use(express.json());
