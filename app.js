@@ -4,7 +4,6 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const helmet = require('helmet');
-const xss = require('xss-clean');
 const hpp = require('hpp');
 const mongoSanitize = require('express-mongo-sanitize');
 const path = require('path');
@@ -26,8 +25,6 @@ app.set('views', path.join(__dirname, 'views'))
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Prevent XSS attacks
-app.use(xss());
 
 // Cookie parser
 app.use(cookieParser());
