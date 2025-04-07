@@ -121,7 +121,7 @@ exports.login = async (req, res, next) => {
         message: 'Invalid credentials'
       });
     }
-
+    res.redirect('/');
     sendTokenResponse(user, 200, res);
   } catch (error) {
     res.status(500).json({
