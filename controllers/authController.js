@@ -38,7 +38,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
-    const existingUser = await User.findOne({ email });
+    // const existingUser = await User.findOne({ email });
     // Ensure only admins can create admin users
     if (role === 'admin') {
       // Check if user is authenticated and is admin
