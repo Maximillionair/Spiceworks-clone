@@ -10,7 +10,7 @@ exports.createTicket = async (req, res, next) => {
     req.body.user = req.user.id;
     
     const ticket = await Ticket.create(req.body);
-    
+    res.redirect('/dashboard')
     res.status(201).json({
       success: true,
       data: ticket
