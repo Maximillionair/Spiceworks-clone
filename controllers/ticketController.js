@@ -10,16 +10,9 @@ exports.createTicket = async (req, res, next) => {
     req.body.user = req.user.id;
     
     const ticket = await Ticket.create(req.body);
-    res.redirect('/dashboard')
-    res.status(201).json({
-      success: true,
-      data: ticket
-    });
+    res.redirect('/dashboard?success=Ticket created successfully');
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
   }
 };
 
@@ -53,42 +46,20 @@ exports.getTickets = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const total = await Ticket.countDocuments();
     
     query = query.skip(startIndex).limit(limit);
     
     // Execute query
     const tickets = await query;
     
-    // Pagination result
-    const pagination = {};
-    
-    if (endIndex < total) {
-      pagination.next = {
-        page: page + 1,
-        limit
-      };
-    }
-    
-    if (startIndex > 0) {
-      pagination.prev = {
-        page: page - 1,
-        limit
-      };
-    }
-    
-    res.status(200).json({
-      success: true,
-      count: tickets.length,
-      pagination,
-      data: tickets
+    // Render tickets page with data
+    res.render('ticketpage', { 
+      tickets,
+      currentPage: page,
+      user: req.user
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
   }
 };
 
@@ -103,29 +74,21 @@ exports.getTicket = async (req, res, next) => {
     });
     
     if (!ticket) {
-      return res.status(404).json({
-        success: false,
-        message: `No ticket found with id of ${req.params.id}`
-      });
+      return res.redirect('/dashboard?error=Ticket not found');
     }
     
     // Make sure user is ticket owner or admin
-    if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: `User ${req.user.id} is not authorized to access this ticket`
-      });
+    if (ticket.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.redirect('/dashboard?error=Not authorized to view this ticket');
     }
     
-    res.status(200).json({
-      success: true,
-      data: ticket
+    // Render ticket detail page with data
+    res.render('ticketdetail', { 
+      ticket,
+      user: req.user
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
   }
 };
 
@@ -137,18 +100,12 @@ exports.updateTicket = async (req, res, next) => {
     let ticket = await Ticket.findById(req.params.id);
     
     if (!ticket) {
-      return res.status(404).json({
-        success: false,
-        message: `No ticket found with id of ${req.params.id}`
-      });
+      return res.redirect('/tickets?error=Ticket not found');
     }
     
     // Make sure user is admin
     if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admins can update ticket status and priority'
-      });
+      return res.redirect('/tickets?error=Only admins can update ticket status');
     }
     
     // Add admin ID to the update for history tracking
@@ -159,74 +116,8 @@ exports.updateTicket = async (req, res, next) => {
       runValidators: true
     });
     
-    res.status(200).json({
-      success: true,
-      data: ticket
-    });
+    res.redirect('/tickets?success=Ticket updated successfully');
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// @desc    Get ticket statistics
-// @route   GET /api/tickets/stats
-// @access  Private/Admin
-exports.getTicketStats = async (req, res, next) => {
-  try {
-    // Make sure user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only admins can access ticket statistics'
-      });
-    }
-    
-    // Get counts for each status
-    const statusCounts = await Ticket.aggregate([
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-    
-    // Convert to a more user-friendly format
-    const stats = {};
-    statusCounts.forEach(status => {
-      stats[status._id] = status.count;
-    });
-    
-    // Get counts by category
-    const categoryCounts = await Ticket.aggregate([
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-    
-    // Convert to a more user-friendly format
-    const categoryStats = {};
-    categoryCounts.forEach(category => {
-      categoryStats[category._id] = category.count;
-    });
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        statusStats: stats,
-        categoryStats
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.redirect('/tickets?error=' + encodeURIComponent(error.message));
   }
 };

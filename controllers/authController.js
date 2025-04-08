@@ -1,13 +1,9 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-// At the top of the file, add environment variable validation
-// if (!process.env.JWT_SECRET || !process.env.JWT_EXPIRE || !process.env.JWT_COOKIE_EXPIRE) {
-//   console.error('JWT environment variables must be set');
-//   process.exit(1);
-// }
+
 // Set token cookie
-const sendTokenResponse = (user, statusCode, res) => {
+const setTokenCookie = (user, res) => {
   // Create token
   const token = user.getSignedJwtToken();
 
@@ -23,13 +19,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     options.secure = true;
   }
 
-  res
-    .status(statusCode)
-    .cookie('token', token, options)
-    .json({
-      success: true,
-      token
-    });
+  res.cookie('token', token, options);
 };
 
 // @desc    Register user
@@ -38,37 +28,6 @@ const sendTokenResponse = (user, statusCode, res) => {
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
-    // const existingUser = await User.findOne({ email });
-    // Ensure only admins can create admin users
-    if (role === 'admin') {
-      // Check if user is authenticated and is admin
-      const authHeader = req.headers.authorization;
-      
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to create admin account'
-        });
-      }
-
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const adminUser = await User.findById(decoded.id);
-        
-        if (!adminUser || adminUser.role !== 'admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Not authorized to create admin account'
-          });
-        }
-      } catch (err) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to create admin account'
-        });
-      }
-    }
 
     // Create user
     const user = await User.create({
@@ -77,14 +36,13 @@ exports.register = async (req, res, next) => {
       password,
       role: role || 'user'
     });
-    console.log(user);
-    res.redirect('/login')
-    // sendTokenResponse(user, 201, res);
+    
+    // Set cookie and redirect to login
+    setTokenCookie(user, res);
+    res.redirect('/login?success=Account created successfully. Please log in.');
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    // Return to registration page with error
+    res.redirect('/register?error=' + encodeURIComponent(error.message));
   }
 };
 
@@ -97,41 +55,28 @@ exports.login = async (req, res, next) => {
 
     // Validate email & password
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide an email and password'
-      });
-    };
+      return res.redirect('/login?error=Please provide email and password');
+    }
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    };
+      return res.redirect('/login?error=Invalid credentials');
+    }
 
     // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials'
-      });
-    } else {
-      // sendTokenResponse(user, 200, res);
-      res.redirect('/dashboard')
-    };
+      return res.redirect('/login?error=Invalid credentials');
+    }
     
-    
+    // Set cookie and redirect to dashboard
+    setTokenCookie(user, res);
+    res.redirect('/dashboard');
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.redirect('/login?error=' + encodeURIComponent(error.message));
   }
 };
 
@@ -144,10 +89,7 @@ exports.logout = async (req, res, next) => {
     httpOnly: true
   });
 
-  res.status(200).json({
-    success: true,
-    data: {}
-  });
+  res.redirect('/');
 };
 
 // @desc    Get current logged in user
@@ -155,9 +97,5 @@ exports.logout = async (req, res, next) => {
 // @access  Private
 exports.getMe = async (req, res, next) => {
   const user = await User.findById(req.user.id);
-
-  res.status(200).json({
-    success: true,
-    data: user
-  });
+  res.redirect('/dashboard');
 };
