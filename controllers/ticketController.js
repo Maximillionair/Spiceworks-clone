@@ -62,9 +62,12 @@ exports.getTickets = async (req, res, next) => {
     const startIndex = (page - 1) * limit;
     
     query = query.skip(startIndex).limit(limit);
-    
+    console.log("tickets", query)
     // Execute query
     const tickets = await query;
+
+
+    console.log("tickets", tickets)
     
     // Render tickets page with data
     res.render('ticketpage', { 
