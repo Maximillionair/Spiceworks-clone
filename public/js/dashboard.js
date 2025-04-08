@@ -1,80 +1,129 @@
+import { HelpdeskAPI } from './api.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Fetch and display recent tickets
+  const fetchRecentTickets = async () => {
     try {
-      // Fetch and display recent tickets
-      const recentRes = await fetch('/api/tickets/recent');
+      const tickets = await HelpdeskAPI.getRecentTickets();
       
-      if (!recentRes.ok) {
-        throw new Error('Failed to fetch recent tickets');
+      // Update ticket counts
+      const counts = {
+        'Åpen': 0,
+        'Under arbeid': 0,
+        'Løst': 0
+      };
+      
+      tickets.forEach(ticket => {
+        counts[ticket.status] = (counts[ticket.status] || 0) + 1;
+      });
+      
+      // Update the count displays
+      document.getElementById('open-tickets-count').textContent = counts['Åpen'] || 0;
+      document.getElementById('in-progress-tickets-count').textContent = counts['Under arbeid'] || 0;
+      document.getElementById('resolved-tickets-count').textContent = counts['Løst'] || 0;
+      
+      // Display recent tickets
+      const ticketList = document.getElementById('recent-tickets-list');
+      if (!ticketList) {
+        console.error('Recent tickets list element not found');
+        return;
       }
       
-      const recentTickets = await recentRes.json();
-      const list = document.getElementById('recent-tickets-list');
-      list.innerHTML = ''; // Clear loading state
-  
-      if (recentTickets.length === 0) {
-        list.innerHTML = '<li>No recent tickets.</li>';
+      if (tickets.length === 0) {
+        ticketList.innerHTML = '<li class="text-muted">No tickets found</li>';
       } else {
-        // Update counts
-        const open = recentTickets.filter(t => t.status === 'Open').length;
-        const inProgress = recentTickets.filter(t => t.status === 'In Progress').length;
-        const resolved = recentTickets.filter(t => t.status === 'Resolved').length;
-        
-        document.getElementById('open-tickets-count').textContent = open;
-        document.getElementById('in-progress-tickets-count').textContent = inProgress;
-        document.getElementById('resolved-tickets-count').textContent = resolved;
-        
-        // List tickets
-        recentTickets.forEach(ticket => {
-          const li = document.createElement('li');
-          li.className = 'ticket-item';
-          li.innerHTML = `
-            <strong>${ticket.title}</strong> - 
-            <span class="badge badge-${ticket.status?.toLowerCase().replace(' ', '-')}">
-              ${ticket.status || 'Open'}
-            </span>
-            <br>
-            <small>${new Date(ticket.createdAt).toLocaleString()}</small>
-          `;
-          list.appendChild(li);
-        });
+        ticketList.innerHTML = tickets.map(ticket => `
+          <li class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>${ticket.title}</strong>
+              <span class="badge badge-${getStatusClass(ticket.status)}">${ticket.status}</span>
+            </div>
+            <small class="text-muted">${new Date(ticket.createdAt).toLocaleDateString()}</small>
+          </li>
+        `).join('');
       }
-  
-      // Handle form submission
-      const ticketForm = document.querySelector('form[action="/api/tickets"]');
-      if (ticketForm) {
-        ticketForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          
-          const formData = new FormData(ticketForm);
-          const ticketData = Object.fromEntries(formData.entries());
-          
-          try {
-            const response = await fetch('/api/tickets', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(ticketData)
-            });
-            
-            if (!response.ok) {
-              const error = await response.json();
-              throw new Error(error.error || 'Failed to create ticket');
-            }
-            
-            alert('Ticket submitted successfully!');
-            ticketForm.reset();
-            
-            // Refresh the ticket list
-            window.location.reload();
-          } catch (err) {
-            alert('Error submitting ticket: ' + err.message);
-          }
-        });
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      const ticketList = document.getElementById('recent-tickets-list');
+      if (ticketList) {
+        ticketList.innerHTML = '<li class="text-danger">Failed to load tickets. Please try again later.</li>';
       }
-    } catch (err) {
-      console.error('Error loading dashboard:', err);
-      document.getElementById('recent-tickets-list').innerHTML = 
-        '<li>Failed to load tickets. Please refresh the page.</li>';
+      showAlert('Failed to load tickets. Please try again later.', 'danger');
     }
-  });
+  };
+
+  // Handle ticket form submission
+  const ticketForm = document.getElementById('ticket-form');
+  if (ticketForm) {
+    ticketForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = ticketForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+      }
+      
+      const formData = new FormData(ticketForm);
+      const ticketData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        category: formData.get('category')
+      };
+      
+      try {
+        const response = await HelpdeskAPI.createTicket(ticketData);
+        
+        // Reset form and refresh ticket list
+        ticketForm.reset();
+        await fetchRecentTickets();
+        showAlert('Ticket created successfully!', 'success');
+      } catch (error) {
+        console.error('Error creating ticket:', error);
+        showAlert(error.message || 'Failed to create ticket. Please try again.', 'danger');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Ticket';
+        }
+      }
+    });
+  }
+
+  // Helper function to get status class
+  function getStatusClass(status) {
+    switch (status) {
+      case 'Åpen':
+        return 'danger';
+      case 'Under arbeid':
+        return 'warning';
+      case 'Løst':
+        return 'success';
+      default:
+        return 'secondary';
+    }
+  }
+  
+  // Show alert function
+  function showAlert(message, type) {
+    const alertContainer = document.querySelector('.alert-container') || createAlertContainer();
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    alertContainer.appendChild(alert);
+  }
+  
+  function createAlertContainer() {
+    const container = document.createElement('div');
+    container.className = 'alert-container position-fixed top-0 start-50 translate-middle-x p-3';
+    container.style.zIndex = '1050';
+    document.body.appendChild(container);
+    return container;
+  }
+
+  // Initial fetch
+  await fetchRecentTickets();
+});

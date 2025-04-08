@@ -16,10 +16,16 @@ exports.protect = async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'Not authorized to access this route'
-    });
+    // Check if this is an API request or a view request
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    } else {
+      // For view requests, redirect to login
+      return res.redirect('/login?error=' + encodeURIComponent('Please log in to access this page'));
+    }
   }
 
   try {
@@ -28,24 +34,49 @@ exports.protect = async (req, res, next) => {
 
     // Add user to request object
     req.user = await User.findById(decoded.id);
+    
+    if (!req.user) {
+      // Check if this is an API request or a view request
+      if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found'
+        });
+      } else {
+        // For view requests, redirect to login
+        return res.redirect('/login?error=' + encodeURIComponent('User not found. Please log in again.'));
+      }
+    }
+    
     next();
   } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: 'Not authorized to access this route'
-    });
+    // Check if this is an API request or a view request
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    } else {
+      // For view requests, redirect to login
+      return res.redirect('/login?error=' + encodeURIComponent('Session expired. Please log in again.'));
+    }
   }
 };
 
 // Grant access to specific roles
 exports.authorize = (...roles) => {
   return (req, res, next) => {
-    console.log(req.user.role);
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `User role ${req.user ? req.user.role : 'unknown'} is not authorized to access this route`
-      });
+      // Check if this is an API request or a view request
+      if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+        return res.status(403).json({
+          success: false,
+          message: `User role ${req.user ? req.user.role : 'unknown'} is not authorized to access this route`
+        });
+      } else {
+        // For view requests, redirect to dashboard with error
+        return res.redirect('/dashboard?error=' + encodeURIComponent('You are not authorized to access this page'));
+      }
     }
     next();
   };

@@ -1,0 +1,58 @@
+<%- include('partials/header', {title: 'Profile', path: '/profile'}) %>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <div class="card">
+        <div class="card-header">
+          <h3>My Profile</h3>
+        </div>
+        <div class="card-body">
+          <%- include('partials/alerts') %>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Name:</strong>
+            </div>
+            <div class="col-md-8">
+              <%= user.name %>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Email:</strong>
+            </div>
+            <div class="col-md-8">
+              <%= user.email %>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Role:</strong>
+            </div>
+            <div class="col-md-8">
+              <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Member Since:</strong>
+            </div>
+            <div class="col-md-8">
+              <%= new Date(user.createdAt).toLocaleDateString() %>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %> 

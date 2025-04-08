@@ -2,11 +2,11 @@ const rateLimit = require('express-rate-limit');
 
 // Create rate limiting middleware
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minute window
-  max: 5, // Limit each IP to 5 requests per windowMs for login attempts
+  windowMs: 5 * 15 * 1000, // 15 minute window
+  max: 8, // Limit each IP to 5 requests per windowMs for login attempts
   message: {
     success: false,
-    message: 'Too many login attempts, please try again after 15 minutes'
+    message: 'Too many login attempts, please try again after 5 minutes'
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers

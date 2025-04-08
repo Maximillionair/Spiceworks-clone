@@ -5,6 +5,7 @@ const { loginLimiter } = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 
+// API routes
 router.post('/register', register);
 router.post('/login', loginLimiter, login);
 router.get('/logout', logout);

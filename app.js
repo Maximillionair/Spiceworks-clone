@@ -1,4 +1,3 @@
-
 const express = require('express');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
@@ -53,7 +52,7 @@ app.use(cors({
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mount API routes
+// Mount API routes with /api prefix
 console.log('Mounting API routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);

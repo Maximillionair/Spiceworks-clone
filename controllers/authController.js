@@ -11,13 +11,10 @@ const setTokenCookie = (user, res) => {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
-    httpOnly: true // Cookie cannot be accessed by client-side JS
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
   };
-
-  // Use secure cookies in production (HTTPS only)
-  if (process.env.NODE_ENV === 'production') {
-    options.secure = true;
-  }
 
   res.cookie('token', token, options);
 };
@@ -25,7 +22,7 @@ const setTokenCookie = (user, res) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-exports.register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
@@ -39,63 +36,122 @@ exports.register = async (req, res, next) => {
 
     // Set token in cookie
     setTokenCookie(user, res);
-    // Redirect with success message
-    res.redirect('/login?success=Account created successfully. Please log in.');
+
+    // Return success response
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      redirect: '/login'
+    });
   } catch (error) {
-    // Redirect with an improved error message
-    res.redirect(`/register?error=${encodeURIComponent("Error creating account: " + error.message)}`);
+    console.error('Registration error:', error);
+    
+    // Handle duplicate email error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map(err => err.message).join(', ')
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error creating account'
+    });
   }
 };
 
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email & password
+    // Check if email and password are provided
     if (!email || !password) {
-      return res.redirect('/login?error=' + encodeURIComponent("Please provide both email and password"));
+      return res.status(400).json({ 
+        success: false,
+        message: 'Please provide email and password' 
+      });
     }
 
-    // Check if the user exists
+    // Find user by email and include password field
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.redirect('/login?error=' + encodeURIComponent("Invalid email or password"));
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
     }
 
-    // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Check password
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.redirect('/login?error=' + encodeURIComponent("Invalid email or password"));
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid credentials' 
+      });
     }
 
-    // Set token and redirect to dashboard
+    // Set token in cookie
     setTokenCookie(user, res);
-    res.redirect('/dashboard');
+
+    // Return success response with redirect based on role
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      redirect: user.role === 'admin' ? '/dashboard' : '/tickets'
+    });
   } catch (error) {
-    // General error handling
-    res.redirect(`/login?error=${encodeURIComponent("Error logging in: " + error.message)}`);
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error during login'
+    });
   }
 };
 
-// @desc    Log user out / clear cookie
+// @desc    Logout user
 // @route   GET /api/auth/logout
-// @access  Private
-exports.logout = async (req, res, next) => {
+// @access  Public
+exports.logout = (req, res) => {
   res.cookie('token', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
   });
 
-  res.redirect('/');
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };
 
-// @desc    Get current logged in user
+// @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-exports.getMe = async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-  res.redirect('/dashboard');
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    return res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error getting user data'
+    });
+  }
 };

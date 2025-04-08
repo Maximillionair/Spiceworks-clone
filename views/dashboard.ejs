@@ -1,81 +1,90 @@
-<%- include('partials/header', {title: 'User Dashboard', path: '/dashboard'}) %>
+<%- include('partials/header', {title: 'Dashboard', path: '/dashboard'}) %>
 
-<h2>User Dashboard</h2>
-<%- include('partials/alerts') %>
+<div class="container mt-4">
+  <!-- Stats Cards Row -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">My Open Tickets</h5>
+          <h2 id="open-tickets-count"><%= stats.open %></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">In Progress</h5>
+          <h2 id="in-progress-tickets-count"><%= stats.inProgress %></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Resolved</h5>
+          <h2 id="resolved-tickets-count"><%= stats.resolved %></h2>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<div class="dashboard">
-  <div class="card stats-card">
-    <h3>My Open Tickets</h3>
-    <div class="stats-number" id="open-tickets-count">0</div>
-    <p>Tickets awaiting response</p>
-  </div>
-  
-  <div class="card stats-card">
-    <h3>In Progress</h3>
-    <div class="stats-number" id="in-progress-tickets-count">0</div>
-    <p>Tickets being worked on</p>
-  </div>
-  
-  <div class="card stats-card">
-    <h3>Resolved</h3>
-    <div class="stats-number" id="resolved-tickets-count">0</div>
-    <p>Successfully resolved tickets</p>
-  </div>
-</div>
-
-<div class="card mb-3">
-  <div class="card-header">
-    <h3>Create New Support Ticket</h3>
-  </div>
-  <div class="card-body">
-    <form action="/api/tickets" method="POST">
-      <div class="form-group">
-        <label for="title" class="form-label">Title</label>
-        <input type="text" class="form-control" id="title" name="title" required>
+  <!-- Create Ticket and Recent Tickets Row -->
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Create New Ticket</h5>
+          <form id="ticket-form" action="/api/tickets" method="POST">
+            <div class="form-group mb-3">
+              <label for="title">Title</label>
+              <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="category">Category</label>
+              <select class="form-control" id="category" name="category" required>
+                <option value="">Select a category</option>
+                <option value="Hardware Issue">Hardware Issue</option>
+                <option value="Software Issue">Software Issue</option>
+                <option value="Network Issue">Network Issue</option>
+                <option value="Account Issue">Account Issue</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label for="description">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Ticket</button>
+          </form>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="category" class="form-label">Category</label>
-        <select class="form-control" id="category" name="category" required>
-          <option value="">Select Category</option>
-          <option value="Hardware Issue">Hardware Issue</option>
-          <option value="Software Issue">Software Issue</option>
-          <option value="Network Issue">Network Issue</option>
-          <option value="Account Issue">Account Issue</option>
-          <option value="Other">Other</option>
-        </select>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Recent Tickets</h5>
+          <ul id="recent-tickets-list" class="list-unstyled">
+            <% if (recentTickets && recentTickets.length > 0) { %>
+              <% recentTickets.forEach(ticket => { %>
+                <li class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <strong><%= ticket.title %></strong>
+                    <span class="badge badge-<%= ticket.status.toLowerCase().replace(' ', '-') %>"><%= ticket.status %></span>
+                  </div>
+                  <small class="text-muted"><%= new Date(ticket.createdAt).toLocaleDateString() %></small>
+                </li>
+              <% }); %>
+            <% } else { %>
+              <li>No recent tickets</li>
+            <% } %>
+          </ul>
+        </div>
       </div>
-      
-      <div class="form-group">
-        <label for="description" class="form-label">Description</label>
-        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
-      </div>
-      
-      <div class="form-group">
-        <button type="submit" class="btn btn-primary">Submit Ticket</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-header">
-    <h3>Recent Tickets</h3>
-  </div>
-  <div class="card-body">
-    <ul class="ticket-list" id="recent-tickets-list">
-      <!-- Tickets will be dynamically loaded here -->
-      <li class="text-center">Loading tickets...</li>
-    </ul>
-  </div>
-  <div class="card-footer">
-    <a href="/tickets" class="btn btn-secondary">View All Tickets</a>
+    </div>
   </div>
 </div>
 
 <%- include('partials/footer') %>
 
-<script src="/js/api.js" defer></script>
-<script src="/js/auth.js" defer></script>
-<script src="/js/tickets.js" defer></script>
-<script src="/js/dashboard.js" defer></script>
+<script type="module" src="/js/dashboard.js"></script>
