@@ -1,27 +1,38 @@
 <%- include('partials/header', {title: 'Dashboard', path: '/dashboard'}) %>
 
 <div class="container mt-4">
+  <h1 class="gradient-text mb-4">Dashboard</h1>
+  
   <!-- Stats Cards Row -->
   <div class="row mb-4">
     <div class="col-md-4">
-      <div class="card">
+      <div class="card stat-card">
         <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-exclamation-circle"></i>
+          </div>
           <h5 class="card-title">Open Tickets</h5>
           <h2 class="text-danger"><%= stats.open %></h2>
         </div>
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card">
+      <div class="card stat-card">
         <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-arrow-repeat"></i>
+          </div>
           <h5 class="card-title">In Progress</h5>
           <h2 class="text-warning"><%= stats.inProgress %></h2>
         </div>
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card">
+      <div class="card stat-card">
         <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
           <h5 class="card-title">Resolved</h5>
           <h2 class="text-success"><%= stats.resolved %></h2>
         </div>
@@ -32,9 +43,11 @@
   <!-- Create Ticket and Recent Tickets Row -->
   <div class="row">
     <div class="col-md-6">
-      <div class="card">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Ticket</h5>
+        </div>
         <div class="card-body">
-          <h5 class="card-title">Create New Ticket</h5>
           <%- include('partials/alerts') %>
           <form action="/tickets" method="POST">
             <div class="form-group mb-3">
@@ -74,26 +87,37 @@
                 Description must be at least 10 characters
               </div>
             </div>
-            <button type="submit" class="btn btn-primary">Submit Ticket</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-send"></i> Submit Ticket
+            </button>
           </form>
         </div>
       </div>
     </div>
     <div class="col-md-6">
-      <div class="card">
+      <div class="card dashboard-card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Tickets</h5>
+        </div>
         <div class="card-body">
-          <h5 class="card-title">Recent Tickets</h5>
-          <ul class="list-unstyled">
+          <ul class="list-unstyled ticket-list">
             <% if (recentTickets && recentTickets.length > 0) { %>
               <% recentTickets.forEach(ticket => { %>
-                <li class="mb-3">
+                <li class="ticket-item">
                   <div class="d-flex justify-content-between align-items-center">
-                    <a href="/tickets/<%= ticket._id %>" class="text-decoration-none">
+                    <a href="/tickets/<%= ticket._id %>" class="text-decoration-none ticket-link">
                       <strong><%= ticket.title %></strong>
                     </a>
-                    <span class="badge bg-<%= getStatusClass(ticket.status) %>"><%= ticket.status %></span>
+                    <span class="badge <%= getStatusClass(ticket.status) %>"><%= ticket.status %></span>
                   </div>
-                  <small class="text-muted"><%= new Date(ticket.createdAt).toLocaleDateString() %></small>
+                  <div class="ticket-meta">
+                    <small class="text-muted">
+                      <i class="bi bi-calendar"></i> <%= new Date(ticket.createdAt).toLocaleDateString() %>
+                    </small>
+                    <small class="text-muted ms-3">
+                      <i class="bi bi-tag"></i> <%= ticket.category %>
+                    </small>
+                  </div>
                 </li>
               <% }); %>
             <% } else { %>
@@ -105,6 +129,109 @@
     </div>
   </div>
 </div>
+
+<style>
+  .gradient-text {
+    background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  
+  .stat-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  
+  .stat-card:nth-child(1) .stat-icon {
+    color: var(--danger-color);
+  }
+  
+  .stat-card:nth-child(2) .stat-icon {
+    color: var(--warning-color);
+  }
+  
+  .stat-card:nth-child(3) .stat-icon {
+    color: var(--success-color);
+  }
+  
+  .dashboard-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+  }
+  
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .ticket-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .ticket-item {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background-color: rgba(42, 42, 42, 0.3);
+    transition: background-color 0.3s ease;
+  }
+  
+  .ticket-item:hover {
+    background-color: rgba(42, 42, 42, 0.5);
+  }
+  
+  .ticket-link {
+    color: var(--dark-text);
+  }
+  
+  .ticket-link:hover {
+    color: var(--primary-color);
+  }
+  
+  .ticket-meta {
+    margin-top: 5px;
+  }
+  
+  .ticket-meta i {
+    margin-right: 3px;
+  }
+  
+  /* Custom scrollbar for ticket list */
+  .ticket-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .ticket-list::-webkit-scrollbar-track {
+    background: var(--dark-hover);
+    border-radius: 3px;
+  }
+  
+  .ticket-list::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 3px;
+  }
+  
+  .ticket-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+  }
+</style>
 
 <%- include('partials/footer') %>
 

@@ -6,6 +6,7 @@ const Comment = require('../models/comment');
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { getHomePage, getDashboardPage, getProfilePage } = require('../controllers/pageController');
 
 // Helper function to get status class for badges
 const getStatusClass = (status) => {
@@ -48,13 +49,7 @@ const alertMiddleware = (req, res, next) => {
 router.use(alertMiddleware);
 
 // Public routes
-router.get('/', (req, res) => {
-  res.render('index', { 
-    title: 'Home', 
-    path: '/',
-    user: req.user || null
-  });
-});
+router.get('/', getHomePage);
 
 router.get('/login', (req, res) => {
   if (req.user) {
@@ -200,43 +195,7 @@ router.get('/logout', (req, res) => {
 });
 
 // Protected routes
-router.get('/dashboard', protect, async (req, res) => {
-  try {
-    // Get recent tickets for the user
-    const recentTickets = await Ticket.find({ user: req.user.id })
-      .sort('-createdAt')
-      .limit(5);
-    
-    // Get ticket counts by status
-    const query = req.user.role === 'admin' ? {} : { user: req.user.id };
-    
-    const stats = {
-      open: await Ticket.countDocuments({ ...query, status: 'Open' }),
-      inProgress: await Ticket.countDocuments({ ...query, status: 'In Progress' }),
-      resolved: await Ticket.countDocuments({ ...query, status: 'Resolved' })
-    };
-    
-    res.render('dashboard', { 
-      title: 'Dashboard', 
-      path: '/dashboard',
-      user: req.user,
-      recentTickets,
-      stats,
-      getStatusClass
-    });
-  } catch (error) {
-    console.error('Dashboard error:', error);
-    res.render('dashboard', { 
-      title: 'Dashboard', 
-      path: '/dashboard',
-      user: req.user,
-      recentTickets: [],
-      stats: { open: 0, inProgress: 0, resolved: 0 },
-      getStatusClass,
-      error: 'Error loading dashboard data'
-    });
-  }
-});
+router.get('/dashboard', protect, getDashboardPage);
 
 // Tickets routes
 router.get('/tickets', protect, async (req, res) => {
@@ -281,19 +240,30 @@ router.get('/tickets', protect, async (req, res) => {
   }
 });
 
-// Single ticket view
+// New ticket form - MOVED BEFORE :id route
+router.get('/tickets/new', protect, (req, res) => {
+  res.render('ticketform', { 
+    title: 'Create New Ticket', 
+    path: '/tickets/new',
+    user: req.user,
+    ticket: null
+  });
+});
+
+// Single ticket view - MOVED AFTER /new route
 router.get('/tickets/:id', protect, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id)
       .populate('user', 'name email')
-      .populate('history.updatedBy', 'name');
+      .populate('history.updatedBy', 'name')
+      .populate('comments.user', 'name role');
     
     if (!ticket) {
       return res.redirect('/tickets?error=Ticket not found');
     }
     
     // Check if user has permission to view this ticket
-    if (req.user.role !== 'admin' && ticket.user._id.toString() !== req.user.id) {
+    if (req.user.role !== 'admin' && (!ticket.user || ticket.user._id.toString() !== req.user.id)) {
       return res.redirect('/tickets?error=You do not have permission to view this ticket');
     }
     
@@ -314,16 +284,6 @@ router.get('/tickets/:id', protect, async (req, res) => {
     console.error('Ticket detail error:', error);
     res.redirect('/tickets?error=Error loading ticket details');
   }
-});
-
-// New ticket form
-router.get('/tickets/new', protect, (req, res) => {
-  res.render('ticketform', { 
-    title: 'Create New Ticket', 
-    path: '/tickets/new',
-    user: req.user,
-    ticket: null
-  });
 });
 
 // Edit ticket form
@@ -459,5 +419,8 @@ router.post('/tickets/:id/comment', protect, async (req, res) => {
     res.redirect(`/tickets/${req.params.id}?error=Error adding comment`);
   }
 });
+
+// Profile route
+router.get('/profile', protect, getProfilePage);
 
 module.exports = router;

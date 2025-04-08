@@ -2,7 +2,7 @@
 
 <div class="container mt-4">
   <div class="row">
-    <div class="col-md-8 mx-auto">
+    <div class="col-md-4">
       <div class="card">
         <div class="card-header">
           <h3>My Profile</h3>
@@ -45,14 +45,124 @@
               <%= new Date(user.createdAt).toLocaleDateString() %>
             </div>
           </div>
-          
-          <div class="mt-4">
-            <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+      </div>
+
+      <!-- Ticket Statistics -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h3>Ticket Statistics</h3>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="stats-card">
+                <h4><%= stats.total %></h4>
+                <p>Total Tickets</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="stats-card">
+                <h4><%= stats.open %></h4>
+                <p>Open Tickets</p>
+              </div>
+            </div>
           </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="stats-card">
+                <h4><%= stats.inProgress %></h4>
+                <p>In Progress</p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="stats-card">
+                <h4><%= stats.resolved %></h4>
+                <p>Resolved</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <!-- Recent Tickets -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Tickets</h3>
+        </div>
+        <div class="card-body">
+          <% if (recentTickets && recentTickets.length > 0) { %>
+            <div class="list-group">
+              <% recentTickets.forEach(ticket => { %>
+                <a href="/tickets/<%= ticket._id %>" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1"><%= ticket.title %></h5>
+                    <small class="text-<%= getStatusClass(ticket.status) %>">
+                      <%= ticket.status %>
+                    </small>
+                  </div>
+                  <p class="mb-1"><%= ticket.description.substring(0, 100) %>...</p>
+                  <small>
+                    Created: <%= new Date(ticket.createdAt).toLocaleDateString() %>
+                    <% if (ticket.assignedTo) { %>
+                      | Assigned to: <%= ticket.assignedTo.name %>
+                    <% } %>
+                  </small>
+                </a>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p class="text-center">No tickets found.</p>
+          <% } %>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .stats-card {
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--dark-hover);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .stats-card h4 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+  }
+
+  .stats-card p {
+    margin: 0.5rem 0 0;
+    color: var(--dark-text-secondary);
+  }
+
+  .list-group-item {
+    background-color: var(--dark-hover);
+    border-color: var(--dark-border);
+    color: var(--dark-text);
+  }
+
+  .list-group-item:hover {
+    background-color: var(--dark-card);
+  }
+
+  .list-group-item h5 {
+    color: var(--dark-text);
+  }
+
+  .list-group-item p {
+    color: var(--dark-text-secondary);
+  }
+
+  .list-group-item small {
+    color: var(--dark-text-secondary);
+  }
+</style>
 
 <%- include('partials/footer') %> 

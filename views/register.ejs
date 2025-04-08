@@ -3,68 +3,105 @@
 <div class="container">
   <div class="row justify-content-center">
     <div class="col-md-6">
-      <div class="card shadow-sm">
+      <div class="card auth-card">
         <div class="card-body">
-          <h2 class="text-center mb-4">Create Account</h2>
+          <h2 class="text-center gradient-text mb-4">Register</h2>
           
           <%- include('partials/alerts') %>
           
           <form action="/register" method="POST" class="needs-validation" novalidate>
-            <div class="mb-3">
-              <label for="name" class="form-label">Full Name</label>
-              <input type="text" class="form-control" id="name" name="name" required
-                     minlength="2" maxlength="50" pattern="[A-Za-z\s]+">
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="name" name="name" placeholder="Full Name" required>
+              <label for="name">Full Name</label>
               <div class="invalid-feedback">
-                Please enter a valid name (letters and spaces only)
+                Please enter your full name
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="email" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="email" name="email" required>
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required>
+              <label for="email">Email address</label>
               <div class="invalid-feedback">
                 Please enter a valid email address
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="password" name="password" required
-                     minlength="6" maxlength="50">
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control" id="password" name="password" placeholder="Password" required minlength="6">
+              <label for="password">Password</label>
               <div class="invalid-feedback">
                 Password must be at least 6 characters long
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="confirmPassword" class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required>
+              <label for="confirmPassword">Confirm Password</label>
               <div class="invalid-feedback">
                 Passwords do not match
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="role" class="form-label">Account Type</label>
-              <select class="form-select" id="role" name="role" required>
-                <option value="user">Regular User</option>
-                <option value="admin">Administrator</option>
-              </select>
-              <div class="form-text">Administrators have access to all tickets and dashboard features</div>
-            </div>
-
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">Register</button>
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-person-plus"></i> Register
+              </button>
             </div>
           </form>
 
-          <div class="text-center mt-3">
-            <p class="mb-0">Already have an account? <a href="/login">Login</a></p>
+          <div class="text-center mt-4">
+            <p class="mb-0">Already have an account? <a href="/login" class="auth-link">Login</a></p>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .auth-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(145deg, var(--dark-card), #252525);
+    border: 1px solid var(--dark-border);
+  }
+  
+  .form-floating > .form-control {
+    background-color: rgba(42, 42, 42, 0.5);
+    border-color: var(--dark-border);
+    color: var(--dark-text);
+  }
+  
+  .form-floating > label {
+    color: var(--dark-text-secondary);
+  }
+  
+  .form-floating > .form-control:focus {
+    background-color: rgba(42, 42, 42, 0.7);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+  }
+  
+  .btn-lg {
+    padding: 0.8rem 1.5rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  
+  .auth-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  
+  .auth-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+  }
+</style>
 
 <%- include('partials/footer') %>

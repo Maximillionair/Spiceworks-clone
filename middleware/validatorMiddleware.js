@@ -4,17 +4,17 @@ const { body, validationResult } = require('express-validator');
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        // Check if it's an API request
-        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+        // Check if this is an API request or a view request
+        if (req.xhr || req.headers.accept && req.headers.accept.indexOf('json') > -1) {
             return res.status(400).json({ 
                 success: false, 
                 errors: errors.array() 
             });
         }
         
-        // For view routes, redirect back with errors
-        const errorMessages = errors.array().map(err => err.msg).join(', ');
-        return res.redirect(`${req.originalUrl}?error=${encodeURIComponent(errorMessages)}`);
+        // For view requests, redirect back with error
+        const errorMessage = errors.array().map(err => err.msg).join(', ');
+        return res.redirect(`${req.originalUrl}?error=${encodeURIComponent(errorMessage)}`);
     }
     next();
 };
@@ -32,14 +32,14 @@ const validateTicketInput = [
         .trim()
         .notEmpty()
         .withMessage('Description is required')
-        .isLength({ min: 10, max: 1000 })
-        .withMessage('Description must be between 10 and 1000 characters'),
+        .isLength({ min: 10 })
+        .withMessage('Description must be at least 10 characters'),
     
     body('category')
         .trim()
         .notEmpty()
         .withMessage('Category is required')
-        .isIn(['Hardware', 'Software', 'Network', 'Account', 'Other'])
+        .isIn(['Hardware', 'Software', 'Network', 'Access', 'Other'])
         .withMessage('Invalid category'),
     
     body('priority')

@@ -1,38 +1,41 @@
-const Ticket = require('../models/ticket');
+const Ticket = require('../models/Ticket');
 const Comment = require('../models/comment');
 const { StatusCodes } = require('http-status-codes');
 const { validateTicketInput, validateCommentInput } = require('../middleware/validatorMiddleware');
 const { validateTicket } = require('../middleware/validators');
+const { getStatusClass } = require('../utils/helpers');
+const { validationResult } = require('express-validator');
 
 // @desc    Create new ticket
 // @route   POST /tickets
 // @access  Private
 const createTicket = async (req, res) => {
   try {
-    // Validate request body
-    await validateTicket(req);
-
-    const ticket = await Ticket.create({
-      ...req.body,
-      user: req.user._id,
-      status: 'Open'
-    });
-
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      data: ticket
-    });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: Object.values(error.errors).map(err => err.message)
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render('ticketform', {
+        title: 'Create Ticket',
+        errors: errors.array(),
+        user: req.user
       });
     }
 
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: 'Error creating ticket'
+    const { title, description, priority } = req.body;
+
+    const ticket = await Ticket.create({
+      title,
+      description,
+      priority,
+      user: req.user.id
+    });
+
+    res.redirect(`/tickets/${ticket._id}`);
+  } catch (error) {
+    console.error('Create ticket error:', error);
+    res.status(500).render('ticketform', {
+      title: 'Create Ticket',
+      errors: [{ msg: 'Server error' }],
+      user: req.user
     });
   }
 };
@@ -42,37 +45,19 @@ const createTicket = async (req, res) => {
 // @access  Private
 const getTickets = async (req, res) => {
   try {
-    const { status, sort = '-createdAt' } = req.query;
-    const query = {};
+    const tickets = await Ticket.find({ user: req.user.id })
+      .sort({ createdAt: -1 });
 
-    // Filter by status if provided
-    if (status) {
-      query.status = status;
-    }
-
-    // If user is not admin, only show their tickets
-    if (req.user.role !== 'admin') {
-      query.$or = [
-        { user: req.user._id },
-        { assignedTo: req.user._id }
-      ];
-    }
-
-    const tickets = await Ticket.find(query)
-      .sort(sort)
-      .populate('user', 'name email')
-      .populate('assignedTo', 'name email')
-      .populate('comments.user', 'name email');
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      count: tickets.length,
-      data: tickets
+    res.render('ticketpage', {
+      title: 'My Tickets',
+      tickets,
+      getStatusClass
     });
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: 'Error fetching tickets'
+    console.error('Get tickets error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Server error'
     });
   }
 };
@@ -82,37 +67,33 @@ const getTickets = async (req, res) => {
 // @access  Private
 const getTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id)
-      .populate('user', 'name email')
-      .populate('assignedTo', 'name email')
-      .populate('comments.user', 'name email')
-      .populate('history.changedBy', 'name email');
+    const ticket = await Ticket.findById(req.params.id);
 
     if (!ticket) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        error: 'Ticket not found'
+      return res.status(404).render('error', {
+        title: 'Error',
+        message: 'Ticket not found'
       });
     }
 
-    // Check if user has access to this ticket
-    if (req.user.role !== 'admin' && 
-      ticket.user.toString() !== req.user._id.toString() && 
-      ticket.assignedTo?.toString() !== req.user._id.toString()) {
-      return res.status(StatusCodes.FORBIDDEN).json({
-        success: false,
-        error: 'Not authorized to access this ticket'
+    // Make sure user is ticket owner
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(401).render('error', {
+        title: 'Error',
+        message: 'Not authorized to access this ticket'
       });
     }
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: ticket
+    res.render('ticketdetail', {
+      title: 'Ticket Details',
+      ticket,
+      getStatusClass
     });
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: 'Error fetching ticket'
+    console.error('Get ticket error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Server error'
     });
   }
 };
@@ -122,96 +103,81 @@ const getTicket = async (req, res) => {
 // @access  Private
 const updateTicket = async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render('ticketdetail', {
+        title: 'Ticket Details',
+        ticket: await Ticket.findById(req.params.id),
+        errors: errors.array(),
+        getStatusClass
+      });
+    }
+
+    let ticket = await Ticket.findById(req.params.id);
 
     if (!ticket) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        error: 'Ticket not found'
+      return res.status(404).render('error', {
+        title: 'Error',
+        message: 'Ticket not found'
       });
     }
 
-    // Check if user has permission to update
-    if (req.user.role !== 'admin' && 
-      ticket.user.toString() !== req.user._id.toString()) {
-      return res.status(StatusCodes.FORBIDDEN).json({
-        success: false,
-        error: 'Not authorized to update this ticket'
+    // Make sure user is ticket owner
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(401).render('error', {
+        title: 'Error',
+        message: 'Not authorized to update this ticket'
       });
     }
 
-    // Update status if provided
-    if (req.body.status && req.body.status !== ticket.status) {
-      await ticket.updateStatus(req.body.status, req.user._id);
-    }
+    const { title, description, status, priority } = req.body;
 
-    // Update assignment if provided
-    if (req.body.assignedTo) {
-      await ticket.assign(req.body.assignedTo, req.user._id);
-    }
-
-    // Update other fields
-    const updatedTicket = await Ticket.findByIdAndUpdate(
+    ticket = await Ticket.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { title, description, status, priority },
       { new: true, runValidators: true }
-    ).populate('user', 'name email')
-     .populate('assignedTo', 'name email')
-     .populate('comments.user', 'name email')
-     .populate('history.changedBy', 'name email');
+    );
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: updatedTicket
-    });
+    res.redirect(`/tickets/${ticket._id}`);
   } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: Object.values(error.errors).map(err => err.message)
-      });
-    }
-
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: 'Error updating ticket'
+    console.error('Update ticket error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Server error'
     });
   }
 };
 
 // @desc    Delete ticket
 // @route   DELETE /tickets/:id
-// @access  Private/Admin
+// @access  Private
 const deleteTicket = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
 
     if (!ticket) {
-      return res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        error: 'Ticket not found'
+      return res.status(404).render('error', {
+        title: 'Error',
+        message: 'Ticket not found'
       });
     }
 
-    // Check if user has permission to delete
-    if (req.user.role !== 'admin' && 
-      ticket.user.toString() !== req.user._id.toString()) {
-      return res.status(StatusCodes.FORBIDDEN).json({
-        success: false,
-        error: 'Not authorized to delete this ticket'
+    // Make sure user is ticket owner
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(401).render('error', {
+        title: 'Error',
+        message: 'Not authorized to delete this ticket'
       });
     }
 
     await ticket.remove();
 
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: {}
-    });
+    res.redirect('/tickets');
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      error: 'Error deleting ticket'
+    console.error('Delete ticket error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Server error'
     });
   }
 };

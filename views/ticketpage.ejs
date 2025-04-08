@@ -1,44 +1,54 @@
 <%- include('partials/header', {title: 'My Tickets', path: '/tickets'}) %>
 
-<h2>My Support Tickets</h2>
-<%- include('partials/alerts') %>
+<div class="container mt-4">
+  <h2 class="gradient-text mb-4">My Support Tickets</h2>
+  
+  <%- include('partials/alerts') %>
 
-<div class="card mb-3">
-  <div class="card-header d-flex justify-between align-center">
-    <h3>All Tickets</h3>
-    <div class="filters">
-      <select id="status-filter" class="form-control">
-        <option value="">All Statuses</option>
-        <option value="Open">Open</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Resolved">Resolved</option>
-      </select>
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">All Tickets</h5>
+      <div class="filters">
+        <form action="/tickets" method="GET" class="d-flex">
+          <select name="status" class="form-control me-2" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="Open" <%= status === 'Open' ? 'selected' : '' %>>Open</option>
+            <option value="In Progress" <%= status === 'In Progress' ? 'selected' : '' %>>In Progress</option>
+            <option value="Resolved" <%= status === 'Resolved' ? 'selected' : '' %>>Resolved</option>
+          </select>
+        </form>
+      </div>
     </div>
-  </div>
-  <div class="card-body">
-    <ul class="ticket-list" id="all-tickets-list">
-      <!-- Tickets will be dynamically loaded here -->
-      <li class="text-center">Loading tickets...</li>
-    </ul>
-  </div>
-  <div class="card-footer" id="pagination-container">
-    <!-- Pagination controls will be inserted here -->
-  </div>
-</div>
-
-<!-- Ticket Details Modal -->
-<div id="ticket-detail-modal" class="modal">
-  <div class="modal-content">
-    <span class="close">&times;</span>
-    <div id="ticket-detail-content">
-      <!-- Ticket details will be dynamically loaded here -->
+    <div class="card-body">
+      <% if (tickets && tickets.length > 0) { %>
+        <div class="ticket-list">
+          <% tickets.forEach(ticket => { %>
+            <div class="ticket-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <a href="/tickets/<%= ticket._id %>" class="ticket-link">
+                  <h5 class="mb-1"><%= ticket.title %></h5>
+                </a>
+                <span class="badge <%= getStatusClass(ticket.status) %>"><%= ticket.status %></span>
+              </div>
+              <div class="ticket-meta">
+                <small class="text-muted">
+                  <i class="bi bi-calendar"></i> <%= new Date(ticket.createdAt).toLocaleDateString() %>
+                </small>
+                <small class="text-muted ms-3">
+                  <i class="bi bi-tag"></i> <%= ticket.category %>
+                </small>
+                <small class="text-muted ms-3">
+                  <i class="bi bi-person"></i> <%= ticket.user ? ticket.user.name : 'Unknown' %>
+                </small>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <p class="text-center text-muted">No tickets found</p>
+      <% } %>
     </div>
   </div>
 </div>
 
 <%- include('partials/footer') %>
-
-<script src="/js/api.js" defer></script>
-<script src="/js/auth.js" defer></script>
-<script src="/js/tickets.js" defer></script>
-<script src="/js/ticket-list.js" defer></script>

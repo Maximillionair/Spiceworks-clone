@@ -9,7 +9,7 @@
       <% if (process.env.NODE_ENV === 'development' && error && error.stack) { %>
         <div class="mt-4">
           <h5>Stack Trace:</h5>
-          <pre class="bg-light p-3 rounded"><%= error.stack %></pre>
+          <pre class="error-stack p-3 rounded"><%= error.stack %></pre>
         </div>
       <% } %>
       
@@ -19,5 +19,16 @@
     </div>
   </div>
 </div>
+
+<style>
+  .error-stack {
+    background-color: var(--dark-input-bg);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
 
 <%- include('partials/footer') %> 

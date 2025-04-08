@@ -1,157 +1,165 @@
-const User = require('../models/user');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const User = require('../models/User');
+const { setTokenCookie, clearTokenCookie } = require('../utils/helpers');
+const { validationResult } = require('express-validator');
 
-// Set token cookie
-const setTokenCookie = (user, res) => {
-  // Create token
-  const token = user.getSignedJwtToken();
-
-  const options = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
-  };
-
-  res.cookie('token', token, options);
+// @desc    Show login page
+// @route   GET /login
+// @access  Public
+exports.getLoginPage = (req, res) => {
+  if (req.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('login', { 
+    title: 'Login', 
+    path: '/login',
+    user: null
+  });
 };
 
-// @desc    Register user
-// @route   POST /api/auth/register
+// @desc    Show register page
+// @route   GET /register
 // @access  Public
+exports.getRegisterPage = (req, res) => {
+  if (req.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('register', { 
+    title: 'Register', 
+    path: '/register',
+    user: null
+  });
+};
+
+/**
+ * @desc    Register user
+ * @route   POST /auth/register
+ * @access  Public
+ */
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render('register', {
+        title: 'Register',
+        errors: errors.array(),
+        user: req.user
+      });
+    }
+
+    const { name, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).render('register', {
+        title: 'Register',
+        errors: [{ msg: 'User already exists' }],
+        user: req.user
+      });
+    }
 
     // Create user
     const user = await User.create({
       name,
       email,
-      password,
-      role: role || 'user'
+      password
     });
 
-    // Set token in cookie
+    // Set token cookie
     setTokenCookie(user, res);
 
-    // Return success response
-    return res.status(201).json({
-      success: true,
-      message: 'Account created successfully',
-      redirect: '/login'
-    });
+    // Redirect to dashboard
+    res.redirect('/dashboard');
   } catch (error) {
-    console.error('Registration error:', error);
-    
-    // Handle duplicate email error
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email already registered'
-      });
-    }
-
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: Object.values(error.errors).map(err => err.message).join(', ')
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: 'Error creating account'
+    console.error('Register error:', error);
+    res.status(500).render('register', {
+      title: 'Register',
+      errors: [{ msg: 'Server error' }],
+      user: req.user
     });
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+/**
+ * @desc    Login user
+ * @route   POST /auth/login
+ * @access  Public
+ */
 exports.login = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).render('login', {
+        title: 'Login',
+        errors: errors.array(),
+        user: req.user
+      });
+    }
+
     const { email, password } = req.body;
 
-    // Check if email and password are provided
-    if (!email || !password) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Please provide email and password' 
-      });
-    }
-
-    // Find user by email and include password field
+    // Check if user exists
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid credentials' 
+      return res.status(401).render('login', {
+        title: 'Login',
+        errors: [{ msg: 'Invalid credentials' }],
+        user: req.user
       });
     }
 
-    // Check password
+    // Check if password matches
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ 
-        success: false,
-        message: 'Invalid credentials' 
+      return res.status(401).render('login', {
+        title: 'Login',
+        errors: [{ msg: 'Invalid credentials' }],
+        user: req.user
       });
     }
 
-    // Set token in cookie
+    // Set token cookie
     setTokenCookie(user, res);
 
-    // Return success response with redirect based on role
-    return res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      redirect: user.role === 'admin' ? '/dashboard' : '/tickets'
-    });
+    // Redirect to dashboard
+    res.redirect('/dashboard');
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error during login'
+    res.status(500).render('login', {
+      title: 'Login',
+      errors: [{ msg: 'Server error' }],
+      user: req.user
     });
   }
 };
 
-// @desc    Logout user
-// @route   GET /api/auth/logout
-// @access  Public
+/**
+ * @desc    Logout user
+ * @route   GET /auth/logout
+ * @access  Private
+ */
 exports.logout = (req, res) => {
-  res.cookie('token', 'none', {
-    expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
-  });
-
-  return res.status(200).json({
-    success: true,
-    message: 'Logged out successfully'
-  });
+  clearTokenCookie(res);
+  res.redirect('/');
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
+/**
+ * @desc    Get current logged in user
+ * @route   GET /auth/me
+ * @access  Private
+ */
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    return res.status(200).json({
-      success: true,
-      data: user
+    const user = await User.findById(req.user.id);
+    res.status(200).render('profile', {
+      title: 'Profile',
+      user
     });
   } catch (error) {
-    console.error('Get current user error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error getting user data'
+    console.error('Get me error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Server error'
     });
   }
 };

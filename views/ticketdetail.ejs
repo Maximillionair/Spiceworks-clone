@@ -3,15 +3,15 @@
 <div class="container mt-4">
   <div class="row mb-4">
     <div class="col-md-8">
-      <h1>Ticket #<%= ticket._id %></h1>
+      <h1 class="gradient-text">Ticket #<%= ticket._id %></h1>
     </div>
     <div class="col-md-4 text-end">
       <a href="/tickets" class="btn btn-secondary me-2">
-        <i class="fas fa-arrow-left"></i> Back to Tickets
+        <i class="bi bi-arrow-left"></i> Back to Tickets
       </a>
       <% if (user.role === 'admin' || ticket.user.toString() === user.id) { %>
-        <a href="/tickets/<%= ticket._id %>/edit" class="btn btn-warning">
-          <i class="fas fa-edit"></i> Edit Ticket
+        <a href="/tickets/<%= ticket._id %>/edit" class="btn btn-primary">
+          <i class="bi bi-pencil"></i> Edit Ticket
         </a>
       <% } %>
     </div>
@@ -22,75 +22,54 @@
   <div class="row">
     <!-- Ticket Details -->
     <div class="col-md-8">
-      <div class="card mb-4">
+      <div class="card ticket-card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><%= ticket.title %></h5>
-          <span class="badge bg-<%= getStatusClass(ticket.status) %>">
-            <%= ticket.status %>
-          </span>
+          <h5 class="mb-0">Ticket Details</h5>
+          <span class="badge <%= getStatusClass(ticket.status) %>"><%= ticket.status %></span>
         </div>
         <div class="card-body">
-          <div class="mb-4">
-            <h6>Description</h6>
+          <h4 class="card-title"><%= ticket.title %></h4>
+          <p class="text-muted">
+            Created by <%= ticket.user ? ticket.user.name : 'Unknown User' %> 
+            on <%= new Date(ticket.createdAt).toLocaleDateString() %>
+          </p>
+          <div class="ticket-info mb-3">
+            <div class="info-item">
+              <i class="bi bi-tag"></i>
+              <strong>Category:</strong> <%= ticket.category %>
+            </div>
+            <div class="info-item">
+              <i class="bi bi-flag"></i>
+              <strong>Priority:</strong> <%= ticket.priority %>
+            </div>
+            <% if (ticket.assignedTo) { %>
+              <div class="info-item">
+                <i class="bi bi-person"></i>
+                <strong>Assigned to:</strong> <%= ticket.assignedTo.name %>
+              </div>
+            <% } %>
+          </div>
+          <div class="ticket-description">
+            <h5><i class="bi bi-card-text"></i> Description</h5>
             <p><%= ticket.description %></p>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6">
-              <h6>Category</h6>
-              <p><%= ticket.category %></p>
-            </div>
-            <div class="col-md-6">
-              <h6>Priority</h6>
-              <p><%= ticket.priority %></p>
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6">
-              <h6>Created</h6>
-              <p><%= new Date(ticket.createdAt).toLocaleString() %></p>
-            </div>
-            <div class="col-md-6">
-              <h6>Last Updated</h6>
-              <p><%= new Date(ticket.updatedAt).toLocaleString() %></p>
-            </div>
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6">
-              <h6>Created By</h6>
-              <p><%= ticket.user.name %></p>
-            </div>
-            <div class="col-md-6">
-              <h6>Email</h6>
-              <p><%= ticket.user.email %></p>
-            </div>
           </div>
         </div>
       </div>
 
       <!-- Comments Section -->
-      <div class="card">
+      <div class="card mt-4 comments-card">
         <div class="card-header">
-          <h5 class="mb-0">Comments</h5>
+          <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Comments</h5>
         </div>
         <div class="card-body">
           <% if (comments && comments.length > 0) { %>
             <% comments.forEach(comment => { %>
-              <div class="comment mb-4">
+              <div class="comment mb-3">
                 <div class="d-flex justify-content-between">
-                  <div>
-                    <strong><%= comment.user.name %></strong>
-                    <% if (comment.user.role === 'admin') { %>
-                      <span class="badge bg-primary ms-2">Admin</span>
-                    <% } %>
-                  </div>
-                  <small class="text-muted">
-                    <%= new Date(comment.createdAt).toLocaleString() %>
-                  </small>
+                  <strong><%= comment.user ? comment.user.name : 'Unknown User' %></strong>
+                  <small class="text-muted"><%= new Date(comment.createdAt).toLocaleString() %></small>
                 </div>
-                <p class="mt-2"><%= comment.content %></p>
+                <p class="mb-0"><%= comment.content %></p>
               </div>
             <% }); %>
           <% } else { %>
@@ -98,41 +77,40 @@
           <% } %>
 
           <!-- Add Comment Form -->
-          <div class="mt-4">
-            <h6>Add a Comment</h6>
-            <form action="/tickets/<%= ticket._id %>/comment" method="POST">
-              <div class="mb-3">
-                <textarea class="form-control" name="content" rows="3" required></textarea>
-              </div>
-              <button type="submit" class="btn btn-primary">Submit Comment</button>
-            </form>
-          </div>
+          <form action="/tickets/<%= ticket._id %>/comments" method="POST" class="mt-4">
+            <div class="form-group">
+              <label for="content">Add a comment</label>
+              <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary mt-2">
+              <i class="bi bi-send"></i> Submit Comment
+            </button>
+          </form>
         </div>
       </div>
     </div>
 
     <!-- Ticket History -->
     <div class="col-md-4">
-      <div class="card">
+      <div class="card history-card">
         <div class="card-header">
-          <h5 class="mb-0">Ticket History</h5>
+          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Ticket History</h5>
         </div>
         <div class="card-body">
           <% if (ticket.history && ticket.history.length > 0) { %>
-            <ul class="list-unstyled">
+            <ul class="list-unstyled history-timeline">
               <% ticket.history.forEach(entry => { %>
                 <li class="mb-3">
-                  <div class="d-flex justify-content-between">
-                    <span class="badge bg-<%= getStatusClass(entry.status) %>">
-                      <%= entry.status %>
-                    </span>
-                    <small class="text-muted">
-                      <%= new Date(entry.updatedAt).toLocaleString() %>
-                    </small>
+                  <div class="history-item">
+                    <div class="history-dot"></div>
+                    <div class="history-content">
+                      <small class="text-muted"><%= new Date(entry.timestamp).toLocaleString() %></small>
+                      <p class="mb-0"><%= entry.action %></p>
+                      <% if (entry.updatedBy) { %>
+                        <small class="text-muted">by <%= entry.updatedBy.name %></small>
+                      <% } %>
+                    </div>
                   </div>
-                  <small class="text-muted">
-                    Updated by: <%= entry.updatedBy ? entry.updatedBy.name : 'System' %>
-                  </small>
                 </li>
               <% }); %>
             </ul>
@@ -144,5 +122,108 @@
     </div>
   </div>
 </div>
+
+<style>
+  .gradient-text {
+    background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+  }
+  
+  .ticket-card, .comments-card, .history-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .ticket-card:hover, .comments-card:hover, .history-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .ticket-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    background-color: rgba(42, 42, 42, 0.5);
+    border-radius: 6px;
+  }
+  
+  .info-item i {
+    color: var(--primary-color);
+  }
+  
+  .ticket-description {
+    background-color: rgba(42, 42, 42, 0.3);
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  .ticket-description h5 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .ticket-description h5 i {
+    color: var(--primary-color);
+  }
+  
+  .history-timeline {
+    position: relative;
+  }
+  
+  .history-timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 10px;
+    width: 2px;
+    background-color: var(--dark-border);
+  }
+  
+  .history-item {
+    position: relative;
+    padding-left: 30px;
+  }
+  
+  .history-dot {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 2px solid var(--dark-card);
+  }
+  
+  .history-content {
+    background-color: rgba(42, 42, 42, 0.3);
+    padding: 10px;
+    border-radius: 6px;
+  }
+  
+  .comment {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 15px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .comment:hover {
+    background-color: rgba(42, 42, 42, 0.3);
+  }
+</style>
 
 <%- include('partials/footer') %> 
