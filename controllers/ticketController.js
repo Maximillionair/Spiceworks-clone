@@ -121,3 +121,55 @@ exports.updateTicket = async (req, res, next) => {
     res.redirect('/tickets?error=' + encodeURIComponent(error.message));
   }
 };
+
+// @desc    Get ticket statistics
+// @route   GET /api/tickets/stats
+// @access  Private/Admin
+exports.getTicketStats = async (req, res, next) => {
+  try {
+    // Make sure user is admin
+    if (req.user.role !== 'admin') {
+      return res.redirect('/dashboard?error=Only admins can access ticket statistics');
+    }
+    
+    // Get counts for each status
+    const statusCounts = await Ticket.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Convert to a more user-friendly format
+    const stats = {};
+    statusCounts.forEach(status => {
+      stats[status._id] = status.count;
+    });
+    
+    // Get counts by category
+    const categoryCounts = await Ticket.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Convert to a more user-friendly format
+    const categoryStats = {};
+    categoryCounts.forEach(category => {
+      categoryStats[category._id] = category.count;
+    });
+    
+    res.render('admin/statistics', {
+      user: req.user,
+      statusStats: stats,
+      categoryStats
+    });
+  } catch (error) {
+    res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
+  }
+};
