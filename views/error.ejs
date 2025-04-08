@@ -2,19 +2,19 @@
 
 <div class="container mt-4">
   <div class="card">
-    <div class="card-body text-center">
+    <div class="card-body">
       <h2 class="card-title text-danger">Error</h2>
       <p class="card-text"><%= message %></p>
       
-      <% if (typeof error !== 'undefined' && error && error.stack && process.env.NODE_ENV === 'development') { %>
-        <div class="alert alert-danger mt-3">
-          <pre><%= error.stack %></pre>
+      <% if (process.env.NODE_ENV === 'development' && error && error.stack) { %>
+        <div class="mt-4">
+          <h5>Stack Trace:</h5>
+          <pre class="bg-light p-3 rounded"><%= error.stack %></pre>
         </div>
       <% } %>
       
       <div class="mt-4">
-        <a href="/" class="btn btn-primary">Go to Home</a>
-        <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+        <a href="/" class="btn btn-primary">Return to Home</a>
       </div>
     </div>
   </div>

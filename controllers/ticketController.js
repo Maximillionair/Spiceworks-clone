@@ -1,282 +1,361 @@
 const Ticket = require('../models/ticket');
-const User = require('../models/user');
-const asyncHandler = require('express-async-handler');
+const Comment = require('../models/comment');
+const { StatusCodes } = require('http-status-codes');
+const { validateTicketInput, validateCommentInput } = require('../middleware/validatorMiddleware');
+const { validateTicket } = require('../middleware/validators');
 
 // @desc    Create new ticket
-// @route   POST /api/tickets
+// @route   POST /tickets
 // @access  Private
-const createTicket = asyncHandler(async (req, res) => {
-  const { title, description, category, priority } = req.body;
-  
-  if (!title || !description || !category) {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(400).json({ message: 'Please add a title, description, and category' });
-    } else {
-      res.redirect('/dashboard?error=Please add a title, description, and category');
+const createTicket = async (req, res) => {
+  try {
+    // Validate request body
+    await validateTicket(req);
+
+    const ticket = await Ticket.create({
+      ...req.body,
+      user: req.user._id,
+      status: 'Open'
+    });
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      data: ticket
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        error: Object.values(error.errors).map(err => err.message)
+      });
     }
-    return;
+
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error creating ticket'
+    });
   }
-  
-  // Create ticket
-  const ticket = await Ticket.create({
-    title,
-    description,
-    category,
-    priority,
-    user: req.user.id
-  });
-  
-  // Check if it's an AJAX request or if the response should be JSON
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(201).json(ticket);
-  } else {
-    res.redirect('/dashboard?success=Ticket created successfully');
-  }
-});
+};
 
 // @desc    Get all tickets
-// @route   GET /api/tickets
+// @route   GET /tickets
 // @access  Private
-const getTickets = asyncHandler(async (req, res) => {
-  // For admin: get all tickets
-  // For regular user: get only own tickets
-  let query;
-  
-  if (req.user.role === 'admin') {
-    query = Ticket.find().populate({
-      path: 'user',
-      select: 'name email'
+const getTickets = async (req, res) => {
+  try {
+    const { status, sort = '-createdAt' } = req.query;
+    const query = {};
+
+    // Filter by status if provided
+    if (status) {
+      query.status = status;
+    }
+
+    // If user is not admin, only show their tickets
+    if (req.user.role !== 'admin') {
+      query.$or = [
+        { user: req.user._id },
+        { assignedTo: req.user._id }
+      ];
+    }
+
+    const tickets = await Ticket.find(query)
+      .sort(sort)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email')
+      .populate('comments.user', 'name email');
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      count: tickets.length,
+      data: tickets
     });
-  } else {
-    query = Ticket.find({ user: req.user.id });
-  }
-  
-  // Add sorting
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(',').join(' ');
-    query = query.sort(sortBy);
-  } else {
-    query = query.sort('-createdAt');
-  }
-  
-  // Execute query
-  const tickets = await query;
-  
-  // Check if it's an AJAX request or if the response should be JSON
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json(tickets);
-  } else {
-    res.render('ticketpage', { 
-      tickets,
-      user: req.user
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error fetching tickets'
     });
   }
-});
+};
 
 // @desc    Get single ticket
-// @route   GET /api/tickets/:id
+// @route   GET /tickets/:id
 // @access  Private
-const getTicket = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id).populate({
-    path: 'user',
-    select: 'name email'
-  });
-  
-  if (!ticket) {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(404).json({ message: 'Ticket not found' });
-    } else {
-      res.redirect('/tickets?error=Ticket not found');
+const getTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email')
+      .populate('comments.user', 'name email')
+      .populate('history.changedBy', 'name email');
+
+    if (!ticket) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        error: 'Ticket not found'
+      });
     }
-    return;
-  }
-  
-  // Make sure user is ticket owner or admin
-  if (ticket.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(401).json({ message: 'Not authorized to view this ticket' });
-    } else {
-      res.redirect('/tickets?error=Not authorized to view this ticket');
+
+    // Check if user has access to this ticket
+    if (req.user.role !== 'admin' && 
+      ticket.user.toString() !== req.user._id.toString() && 
+      ticket.assignedTo?.toString() !== req.user._id.toString()) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        error: 'Not authorized to access this ticket'
+      });
     }
-    return;
-  }
-  
-  // Check if it's an AJAX request or if the response should be JSON
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json(ticket);
-  } else {
-    res.render('ticketdetail', { 
-      ticket,
-      user: req.user
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: ticket
+    });
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error fetching ticket'
     });
   }
-});
+};
 
 // @desc    Update ticket
-// @route   PUT /api/tickets/:id
-// @access  Private/Admin
-const updateTicket = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
-  
-  if (!ticket) {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(404).json({ message: 'Ticket not found' });
-    } else {
-      res.redirect('/tickets?error=Ticket not found');
+// @route   PUT /tickets/:id
+// @access  Private
+const updateTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        error: 'Ticket not found'
+      });
     }
-    return;
-  }
-  
-  // Make sure user is admin
-  if (req.user.role !== 'admin') {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(401).json({ message: 'Only admins can update ticket status' });
-    } else {
-      res.redirect('/tickets?error=Only admins can update ticket status');
+
+    // Check if user has permission to update
+    if (req.user.role !== 'admin' && 
+      ticket.user.toString() !== req.user._id.toString()) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        error: 'Not authorized to update this ticket'
+      });
     }
-    return;
+
+    // Update status if provided
+    if (req.body.status && req.body.status !== ticket.status) {
+      await ticket.updateStatus(req.body.status, req.user._id);
+    }
+
+    // Update assignment if provided
+    if (req.body.assignedTo) {
+      await ticket.assign(req.body.assignedTo, req.user._id);
+    }
+
+    // Update other fields
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).populate('user', 'name email')
+     .populate('assignedTo', 'name email')
+     .populate('comments.user', 'name email')
+     .populate('history.changedBy', 'name email');
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedTicket
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        error: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error updating ticket'
+    });
   }
-  
-  // Add admin ID to the update for history tracking
-  req.body.updatedBy = req.user.id;
-  
-  const updatedTicket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true
-  });
-  
-  // Check if it's an AJAX request or if the response should be JSON
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json(updatedTicket);
-  } else {
-    res.redirect(`/ticket/${req.params.id}?success=Ticket updated successfully`);
-  }
-});
+};
 
 // @desc    Delete ticket
-// @route   DELETE /api/tickets/:id
+// @route   DELETE /tickets/:id
 // @access  Private/Admin
-const deleteTicket = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findById(req.params.id);
-  
-  if (!ticket) {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(404).json({ message: 'Ticket not found' });
-    } else {
-      res.redirect('/tickets?error=Ticket not found');
+const deleteTicket = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        error: 'Ticket not found'
+      });
     }
-    return;
-  }
-  
-  // Make sure user is admin
-  if (req.user.role !== 'admin') {
-    if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(401).json({ message: 'Only admins can delete tickets' });
-    } else {
-      res.redirect('/tickets?error=Only admins can delete tickets');
+
+    // Check if user has permission to delete
+    if (req.user.role !== 'admin' && 
+      ticket.user.toString() !== req.user._id.toString()) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        error: 'Not authorized to delete this ticket'
+      });
     }
-    return;
+
+    await ticket.remove();
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: {}
+    });
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error deleting ticket'
+    });
   }
-  
-  await ticket.deleteOne();
-  
-  // Check if it's an AJAX request or if the response should be JSON
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json({ id: req.params.id });
-  } else {
-    res.redirect('/tickets?success=Ticket deleted successfully');
-  }
-});
+};
 
 // @desc    Get ticket statistics
 // @route   GET /api/tickets/stats
 // @access  Private/Admin
-const getTicketStats = asyncHandler(async (req, res) => {
-  // Make sure user is admin
-  if (req.user.role !== 'admin') {
+const getTicketStats = async (req, res) => {
+  try {
+    // Make sure user is admin
+    if (req.user.role !== 'admin') {
+      if (req.xhr || req.headers.accept.includes('application/json')) {
+        res.status(403).json({ message: 'Only admins can access ticket statistics' });
+      } else {
+        res.redirect('/dashboard?error=Only admins can access ticket statistics');
+      }
+      return;
+    }
+    
+    // Get counts for each status
+    const statusCounts = await Ticket.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Convert to a more user-friendly format
+    const stats = {};
+    statusCounts.forEach(status => {
+      stats[status._id] = status.count;
+    });
+    
+    // Get counts by category
+    const categoryCounts = await Ticket.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // Convert to a more user-friendly format
+    const categoryStats = {};
+    categoryCounts.forEach(category => {
+      categoryStats[category._id] = category.count;
+    });
+    
     if (req.xhr || req.headers.accept.includes('application/json')) {
-      res.status(403).json({ message: 'Only admins can access ticket statistics' });
+      res.status(200).json({
+        statusStats: stats,
+        categoryStats
+      });
     } else {
-      res.redirect('/dashboard?error=Only admins can access ticket statistics');
+      res.render('admin/statistics', {
+        user: req.user,
+        statusStats: stats,
+        categoryStats
+      });
     }
-    return;
+  } catch (error) {
+    res.status(500).json({ message: 'Error getting ticket statistics', error: error.message });
   }
-  
-  // Get counts for each status
-  const statusCounts = await Ticket.aggregate([
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  
-  // Convert to a more user-friendly format
-  const stats = {};
-  statusCounts.forEach(status => {
-    stats[status._id] = status.count;
-  });
-  
-  // Get counts by category
-  const categoryCounts = await Ticket.aggregate([
-    {
-      $group: {
-        _id: '$category',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  
-  // Convert to a more user-friendly format
-  const categoryStats = {};
-  categoryCounts.forEach(category => {
-    categoryStats[category._id] = category.count;
-  });
-  
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json({
-      statusStats: stats,
-      categoryStats
-    });
-  } else {
-    res.render('admin/statistics', {
-      user: req.user,
-      statusStats: stats,
-      categoryStats
-    });
-  }
-});
+};
 
 // @desc    Get recent tickets
 // @route   GET /api/tickets/recent
 // @access  Private
-const getRecentTickets = asyncHandler(async (req, res) => {
-  // For admin: get all recent tickets
-  // For regular user: get only own recent tickets
-  let query;
-  
-  if (req.user.role === 'admin') {
-    query = Ticket.find().populate({
-      path: 'user',
-      select: 'name email'
+const getRecentTickets = async (req, res) => {
+  try {
+    // For admin: get all recent tickets
+    // For regular user: get only own recent tickets
+    let query;
+    
+    if (req.user.role === 'admin') {
+      query = Ticket.find().populate({
+        path: 'user',
+        select: 'name email'
+      });
+    } else {
+      query = Ticket.find({ user: req.user.id });
+    }
+    
+    // Get recent tickets with sorting by 'createdAt' (most recent first)
+    const tickets = await query
+      .sort({ createdAt: -1 })
+      .limit(5);
+    
+    if (req.xhr || req.headers.accept.includes('application/json')) {
+      res.status(200).json(tickets);
+    } else {
+      // For view requests, this should be handled by viewRoutes.js
+      res.redirect('/dashboard');
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching recent tickets', error: error.message });
+  }
+};
+
+// @desc    Add comment to ticket
+// @route   POST /tickets/:id/comments
+// @access  Private
+const addComment = async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        error: 'Ticket not found'
+      });
+    }
+
+    // Check if user has access to this ticket
+    if (req.user.role !== 'admin' && 
+      ticket.user.toString() !== req.user._id.toString() && 
+      ticket.assignedTo?.toString() !== req.user._id.toString()) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        error: 'Not authorized to comment on this ticket'
+      });
+    }
+
+    await ticket.addComment(req.body.content, req.user._id);
+
+    const updatedTicket = await Ticket.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email')
+      .populate('comments.user', 'name email');
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: updatedTicket
     });
-  } else {
-    query = Ticket.find({ user: req.user.id });
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: 'Error adding comment'
+    });
   }
-  
-  // Get recent tickets with sorting by 'createdAt' (most recent first)
-  const tickets = await query
-    .sort({ createdAt: -1 })
-    .limit(5);
-  
-  if (req.xhr || req.headers.accept.includes('application/json')) {
-    res.status(200).json(tickets);
-  } else {
-    // For view requests, this should be handled by viewRoutes.js
-    res.redirect('/dashboard');
-  }
-});
+};
 
 module.exports = {
   getTickets,
@@ -285,5 +364,6 @@ module.exports = {
   updateTicket,
   deleteTicket,
   getTicketStats,
-  getRecentTickets
+  getRecentTickets,
+  addComment
 };

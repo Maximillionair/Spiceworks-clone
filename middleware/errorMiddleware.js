@@ -24,9 +24,21 @@ const errorHandler = (err, req, res, next) => {
       error = { message, statusCode: 400 };
     }
   
-    res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Server Error'
+    // For API routes
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || 'Server Error'
+      });
+    }
+    
+    // For view routes
+    return res.status(error.statusCode || 500).render('error', { 
+      title: 'Error',
+      path: '',
+      user: req.user || null,
+      message: error.message || 'Server Error',
+      error: process.env.NODE_ENV === 'development' ? err : {}
     });
   };
   

@@ -1,26 +1,25 @@
 const mongoose = require('mongoose');
 
-const CommentSchema = new mongoose.Schema({
-  ticket: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Ticket',
-    required: true
-  },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
+const commentSchema = new mongoose.Schema({
   content: {
     type: String,
     required: [true, 'Please provide comment content'],
     trim: true,
-    maxlength: [1000, 'Comment cannot be more than 1000 characters']
+    maxlength: [500, 'Comment cannot be more than 500 characters']
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  ticket: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Ticket',
+    required: [true, 'Please provide ticket id']
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Please provide user id']
   }
+}, {
+  timestamps: true
 });
 
-module.exports = mongoose.model('Comment', CommentSchema);
+// Check if the model is already defined before creating a new one
+module.exports = mongoose.models.Comment || mongoose.model('Comment', commentSchema);

@@ -1,0 +1,148 @@
+<%- include('partials/header', { title: `Ticket #${ticket._id}`, path: `/tickets/${ticket._id}` }) %>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1>Ticket #<%= ticket._id %></h1>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="/tickets" class="btn btn-secondary me-2">
+        <i class="fas fa-arrow-left"></i> Back to Tickets
+      </a>
+      <% if (user.role === 'admin' || ticket.user.toString() === user.id) { %>
+        <a href="/tickets/<%= ticket._id %>/edit" class="btn btn-warning">
+          <i class="fas fa-edit"></i> Edit Ticket
+        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include('partials/alerts') %>
+
+  <div class="row">
+    <!-- Ticket Details -->
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><%= ticket.title %></h5>
+          <span class="badge bg-<%= getStatusClass(ticket.status) %>">
+            <%= ticket.status %>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h6>Description</h6>
+            <p><%= ticket.description %></p>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Category</h6>
+              <p><%= ticket.category %></p>
+            </div>
+            <div class="col-md-6">
+              <h6>Priority</h6>
+              <p><%= ticket.priority %></p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Created</h6>
+              <p><%= new Date(ticket.createdAt).toLocaleString() %></p>
+            </div>
+            <div class="col-md-6">
+              <h6>Last Updated</h6>
+              <p><%= new Date(ticket.updatedAt).toLocaleString() %></p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Created By</h6>
+              <p><%= ticket.user.name %></p>
+            </div>
+            <div class="col-md-6">
+              <h6>Email</h6>
+              <p><%= ticket.user.email %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comments Section -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Comments</h5>
+        </div>
+        <div class="card-body">
+          <% if (comments && comments.length > 0) { %>
+            <% comments.forEach(comment => { %>
+              <div class="comment mb-4">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong><%= comment.user.name %></strong>
+                    <% if (comment.user.role === 'admin') { %>
+                      <span class="badge bg-primary ms-2">Admin</span>
+                    <% } %>
+                  </div>
+                  <small class="text-muted">
+                    <%= new Date(comment.createdAt).toLocaleString() %>
+                  </small>
+                </div>
+                <p class="mt-2"><%= comment.content %></p>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <p class="text-muted">No comments yet.</p>
+          <% } %>
+
+          <!-- Add Comment Form -->
+          <div class="mt-4">
+            <h6>Add a Comment</h6>
+            <form action="/tickets/<%= ticket._id %>/comment" method="POST">
+              <div class="mb-3">
+                <textarea class="form-control" name="content" rows="3" required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Submit Comment</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ticket History -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Ticket History</h5>
+        </div>
+        <div class="card-body">
+          <% if (ticket.history && ticket.history.length > 0) { %>
+            <ul class="list-unstyled">
+              <% ticket.history.forEach(entry => { %>
+                <li class="mb-3">
+                  <div class="d-flex justify-content-between">
+                    <span class="badge bg-<%= getStatusClass(entry.status) %>">
+                      <%= entry.status %>
+                    </span>
+                    <small class="text-muted">
+                      <%= new Date(entry.updatedAt).toLocaleString() %>
+                    </small>
+                  </div>
+                  <small class="text-muted">
+                    Updated by: <%= entry.updatedBy ? entry.updatedBy.name : 'System' %>
+                  </small>
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="text-muted">No history available.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %> 

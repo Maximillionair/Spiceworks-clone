@@ -1,33 +1,30 @@
 const express = require('express');
-const { 
-  createTicket, 
-  getTickets, 
-  getTicket, 
-  updateTicket, 
-  getTicketStats, 
-  getRecentTickets
-} = require('../controllers/ticketController');
-const { protect, authorize } = require('../middleware/authmiddleware');
-
 const router = express.Router();
+const { protect, authorize } = require('../middleware/authmiddleware');
+const { validateTicketInput, validateCommentInput } = require('../middleware/validatorMiddleware');
+const {
+  getTickets,
+  getTicket,
+  createTicket,
+  updateTicket,
+  deleteTicket,
+  addComment
+} = require('../controllers/ticketController');
 
-// Apply authentication middleware to all routes
+// Apply protection to all routes
 router.use(protect);
 
-// API routes for tickets
+// Routes for tickets
 router.route('/')
-  .post(createTicket)
-  .get(getTickets);
+  .get(getTickets)
+  .post(validateTicketInput, createTicket);
 
-// Route for recent tickets
-router.get('/recent', getRecentTickets);
-
-// Route for ticket statistics
-router.get('/stats', authorize('admin'), getTicketStats);
-
-// Routes for individual tickets
 router.route('/:id')
   .get(getTicket)
-  .put(authorize('admin'), updateTicket);
+  .put(validateTicketInput, updateTicket)
+  .delete(deleteTicket);
+
+// Route for adding comments to a ticket
+router.post('/:id/comments', validateCommentInput, addComment);
 
 module.exports = router;

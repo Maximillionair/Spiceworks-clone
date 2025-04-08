@@ -11,11 +11,8 @@ async function connectDB() {
       console.error('MongoDB connection error:', err);
     });
 
-    // Add database name and options to connection string
-    await mongoose.connect('mongodb://10.12.10.232/ticketSystem', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    // Use environment variable for connection string with fallback
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/helpdesk');
     
     // This will print but the "once" handler above will provide more confirmation
     console.log('MongoDB connection initiated');

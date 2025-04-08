@@ -7,9 +7,9 @@
         <div class="card-body">
           <h2 class="text-center mb-4">Create Account</h2>
           
-          <div class="alert alert-danger d-none" id="error-alert" role="alert"></div>
+          <%- include('partials/alerts') %>
           
-          <form id="register-form" class="needs-validation" novalidate>
+          <form action="/register" method="POST" class="needs-validation" novalidate>
             <div class="mb-3">
               <label for="name" class="form-label">Full Name</label>
               <input type="text" class="form-control" id="name" name="name" required
@@ -54,10 +54,7 @@
             </div>
 
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">
-                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                Register
-              </button>
+              <button type="submit" class="btn btn-primary">Register</button>
             </div>
           </form>
 
@@ -71,5 +68,3 @@
 </div>
 
 <%- include('partials/footer') %>
-
-<script type="module" src="/js/register.js"></script>

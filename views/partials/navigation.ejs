@@ -1,14 +1,44 @@
-<nav class="main-nav">
-    <ul class="nav-links">
-        <li><a href="/" class="nav-link <%= path === '/' ? 'active' : '' %>">Home</a></li>
-        <% if (user) { %>
-            <li><a href="/dashboard" class="nav-link <%= path === '/dashboard' ? 'active' : '' %>">Dashboard</a></li>
-            <li><a href="/tickets" class="nav-link <%= path === '/tickets' ? 'active' : '' %>">Tickets</a></li>
-            <li><a href="/profile" class="nav-link <%= path === '/profile' ? 'active' : '' %>">Profile</a></li>
-            <li><a href="#" class="nav-link" id="logout-link">Logout</a></li>
-        <% } else { %>
-            <li><a href="/login" class="nav-link <%= path === '/login' ? 'active' : '' %>">Login</a></li>
-            <li><a href="/register" class="nav-link <%= path === '/register' ? 'active' : '' %>">Register</a></li>
-        <% } %>
-    </ul>
-</nav>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+  <span class="navbar-toggler-icon"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="navbarNav">
+  <ul class="navbar-nav ms-auto">
+    <li class="nav-item">
+      <a href="/" class="nav-link <%= path === '/' ? 'active' : '' %>">Home</a>
+    </li>
+    <% if (user) { %>
+      <li class="nav-item">
+        <a href="/dashboard" class="nav-link <%= path === '/dashboard' ? 'active' : '' %>">
+          <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/tickets" class="nav-link <%= path === '/tickets' ? 'active' : '' %>">
+          <i class="bi bi-ticket-detailed"></i> Tickets
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/profile" class="nav-link <%= path === '/profile' ? 'active' : '' %>">
+          <i class="bi bi-person"></i> Profile
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/logout" class="nav-link">
+          <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+      </li>
+    <% } else { %>
+      <li class="nav-item">
+        <a href="/login" class="nav-link <%= path === '/login' ? 'active' : '' %>">
+          <i class="bi bi-box-arrow-in-right"></i> Login
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="/register" class="nav-link <%= path === '/register' ? 'active' : '' %>">
+          <i class="bi bi-person-plus"></i> Register
+        </a>
+      </li>
+    <% } %>
+  </ul>
+</div>

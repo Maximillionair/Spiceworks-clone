@@ -1,8 +1,41 @@
 const express = require('express');
-const { protect } = require('../middleware/authmiddleware');
+const router = express.Router();
+const { protect, authorize } = require('../middleware/authmiddleware');
 const Ticket = require('../models/ticket');
 const Comment = require('../models/comment');
-const router = express.Router();
+const User = require('../models/user');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// Helper function to get status class for badges
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'Open':
+      return 'danger';
+    case 'In Progress':
+      return 'warning';
+    case 'Resolved':
+      return 'success';
+    default:
+      return 'secondary';
+  }
+};
+
+// Helper function to set JWT token cookie
+const setTokenCookie = (user, res) => {
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRE }
+  );
+
+  res.cookie('token', token, {
+    expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+};
 
 // Middleware to process query string alerts
 const alertMiddleware = (req, res, next) => {
@@ -16,180 +49,285 @@ router.use(alertMiddleware);
 
 // Public routes
 router.get('/', (req, res) => {
-  res.render('index', {
-    title: 'Home',
+  res.render('index', { 
+    title: 'Home', 
     path: '/',
     user: req.user || null
   });
 });
 
 router.get('/login', (req, res) => {
-  res.render('login', {
-    title: 'Login',
+  if (req.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('login', { 
+    title: 'Login', 
     path: '/login',
-    user: req.user || null
+    user: null
   });
+});
+
+// Handle login form submission
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate email and password
+    if (!email || !password) {
+      return res.render('login', {
+        title: 'Login',
+        path: '/login',
+        user: null,
+        error: 'Please provide both email and password'
+      });
+    }
+
+    // Check for user
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.render('login', {
+        title: 'Login',
+        path: '/login',
+        user: null,
+        error: 'Invalid credentials'
+      });
+    }
+
+    // Check password
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.render('login', {
+        title: 'Login',
+        path: '/login',
+        user: null,
+        error: 'Invalid credentials'
+      });
+    }
+
+    // Set JWT cookie
+    setTokenCookie(user, res);
+
+    // Redirect based on role
+    res.redirect(user.role === 'admin' ? '/dashboard' : '/tickets');
+  } catch (error) {
+    console.error('Login error:', error);
+    res.render('login', {
+      title: 'Login',
+      path: '/login',
+      user: null,
+      error: 'Error during login'
+    });
+  }
 });
 
 router.get('/register', (req, res) => {
-  res.render('register', {
-    title: 'Register',
+  if (req.user) {
+    return res.redirect('/dashboard');
+  }
+  res.render('register', { 
+    title: 'Register', 
     path: '/register',
-    user: req.user || null
+    user: null
   });
 });
 
-// Protected routes - require authentication
+// Handle registration form submission
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword, role } = req.body;
+
+    // Basic validation
+    if (!name || !email || !password || !confirmPassword) {
+      return res.render('register', {
+        title: 'Register',
+        path: '/register',
+        user: null,
+        error: 'Please fill in all fields'
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.render('register', {
+        title: 'Register',
+        path: '/register',
+        user: null,
+        error: 'Passwords do not match'
+      });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.render('register', {
+        title: 'Register',
+        path: '/register',
+        user: null,
+        error: 'Email already registered'
+      });
+    }
+
+    // Create user
+    user = await User.create({
+      name,
+      email,
+      password,
+      role: role || 'user'
+    });
+
+    // Set JWT cookie
+    setTokenCookie(user, res);
+
+    // Redirect to login page with success message
+    res.redirect('/login?success=Registration successful! Please log in.');
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.render('register', {
+      title: 'Register',
+      path: '/register',
+      user: null,
+      error: error.message || 'Error during registration'
+    });
+  }
+});
+
+// Logout route
+router.get('/logout', (req, res) => {
+  res.cookie('token', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true
+  });
+  res.redirect('/?success=Logged out successfully');
+});
+
+// Protected routes
 router.get('/dashboard', protect, async (req, res) => {
   try {
-    // Get recent tickets
+    // Get recent tickets for the user
     const recentTickets = await Ticket.find({ user: req.user.id })
       .sort('-createdAt')
       .limit(5);
     
-    // Get ticket counts
-    const openCount = await Ticket.countDocuments({ 
-      user: req.user.id,
-      status: 'Åpen'
-    });
+    // Get ticket counts by status
+    const query = req.user.role === 'admin' ? {} : { user: req.user.id };
     
-    const inProgressCount = await Ticket.countDocuments({ 
-      user: req.user.id,
-      status: 'Under arbeid'
-    });
+    const stats = {
+      open: await Ticket.countDocuments({ ...query, status: 'Open' }),
+      inProgress: await Ticket.countDocuments({ ...query, status: 'In Progress' }),
+      resolved: await Ticket.countDocuments({ ...query, status: 'Resolved' })
+    };
     
-    const resolvedCount = await Ticket.countDocuments({ 
-      user: req.user.id,
-      status: 'Løst'
-    });
-
-    res.render('dashboard', {
-      title: 'Dashboard',
+    res.render('dashboard', { 
+      title: 'Dashboard', 
       path: '/dashboard',
       user: req.user,
       recentTickets,
-      stats: {
-        open: openCount,
-        inProgress: inProgressCount,
-        resolved: resolvedCount
-      }
+      stats,
+      getStatusClass
     });
   } catch (error) {
-    console.error(error);
-    res.render('dashboard', {
-      title: 'Dashboard',
+    console.error('Dashboard error:', error);
+    res.render('dashboard', { 
+      title: 'Dashboard', 
       path: '/dashboard',
       user: req.user,
+      recentTickets: [],
+      stats: { open: 0, inProgress: 0, resolved: 0 },
+      getStatusClass,
       error: 'Error loading dashboard data'
     });
   }
 });
 
-// Add profile route
-router.get('/profile', protect, async (req, res) => {
-  try {
-    res.render('profile', {
-      title: 'Profile',
-      path: '/profile',
-      user: req.user
-    });
-  } catch (error) {
-    console.error(error);
-    res.redirect('/dashboard?error=Error loading profile');
-  }
-});
-
+// Tickets routes
 router.get('/tickets', protect, async (req, res) => {
   try {
-    // For admin: get all tickets
-    // For regular user: get only own tickets
-    let query;
+    // Build query based on user role and status filter
+    let query = {};
     
-    if (req.user.role === 'admin') {
-      query = Ticket.find().populate({
-        path: 'user',
-        select: 'name email'
-      });
-    } else {
-      query = Ticket.find({ user: req.user.id });
+    // Regular users can only see their own tickets
+    if (req.user.role !== 'admin') {
+      query.user = req.user.id;
     }
     
-    // Add sorting
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('-createdAt');
+    // Apply status filter if provided
+    if (req.query.status) {
+      query.status = req.query.status;
     }
     
-    // Execute query
-    const tickets = await query;
+    // Get tickets with sorting
+    const tickets = await Ticket.find(query)
+      .sort('-createdAt')
+      .populate('user', 'name email');
     
-    res.render('ticketpage', { 
-      title: 'My Tickets',
-      path: '/tickets',
-      tickets,
-      user: req.user
-    });
-  } catch (error) {
-    console.error(error);
-    res.render('ticketpage', {
-      title: 'My Tickets',
+    res.render('tickets', { 
+      title: 'Tickets', 
       path: '/tickets',
       user: req.user,
+      tickets,
+      status: req.query.status || '',
+      getStatusClass
+    });
+  } catch (error) {
+    console.error('Tickets list error:', error);
+    res.render('tickets', { 
+      title: 'Tickets', 
+      path: '/tickets',
+      user: req.user,
+      tickets: [],
+      status: '',
+      getStatusClass,
       error: 'Error loading tickets'
     });
   }
 });
 
-router.get('/ticket/:id', protect, async (req, res) => {
+// Single ticket view
+router.get('/tickets/:id', protect, async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id).populate({
-      path: 'user',
-      select: 'name email'
-    });
+    const ticket = await Ticket.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('history.updatedBy', 'name');
     
     if (!ticket) {
       return res.redirect('/tickets?error=Ticket not found');
     }
     
-    // Make sure user is ticket owner or admin
-    if (ticket.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.redirect('/tickets?error=Not authorized to view this ticket');
+    // Check if user has permission to view this ticket
+    if (req.user.role !== 'admin' && ticket.user._id.toString() !== req.user.id) {
+      return res.redirect('/tickets?error=You do not have permission to view this ticket');
     }
     
     // Get comments for this ticket
     const comments = await Comment.find({ ticket: req.params.id })
-      .populate({
-        path: 'user',
-        select: 'name role'
-      })
+      .populate('user', 'name role')
       .sort('createdAt');
     
     res.render('ticketdetail', { 
-      title: `Ticket #${ticket._id}`,
-      path: `/ticket/${req.params.id}`,
+      title: `Ticket #${ticket._id}`, 
+      path: `/tickets/${ticket._id}`,
+      user: req.user,
       ticket,
       comments,
-      user: req.user
+      getStatusClass
     });
   } catch (error) {
-    res.redirect('/tickets?error=' + encodeURIComponent(error.message));
+    console.error('Ticket detail error:', error);
+    res.redirect('/tickets?error=Error loading ticket details');
   }
 });
 
-// Form submission routes
-router.post('/ticket/create', protect, async (req, res) => {
-  try {
-    req.body.user = req.user.id;
-    await Ticket.create(req.body);
-    res.redirect('/dashboard?success=Ticket created successfully');
-  } catch (error) {
-    res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
-  }
+// New ticket form
+router.get('/tickets/new', protect, (req, res) => {
+  res.render('ticketform', { 
+    title: 'Create New Ticket', 
+    path: '/tickets/new',
+    user: req.user,
+    ticket: null
+  });
 });
 
-router.post('/ticket/:id/comment', protect, async (req, res) => {
+// Edit ticket form
+router.get('/tickets/:id/edit', protect, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     
@@ -197,47 +335,128 @@ router.post('/ticket/:id/comment', protect, async (req, res) => {
       return res.redirect('/tickets?error=Ticket not found');
     }
     
-    // Make sure user is ticket owner or admin
-    if (ticket.user.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.redirect('/tickets?error=Not authorized to add a comment to this ticket');
+    // Check if user has permission to edit this ticket
+    if (req.user.role !== 'admin' && ticket.user.toString() !== req.user.id) {
+      return res.redirect('/tickets?error=You do not have permission to edit this ticket');
     }
     
+    res.render('ticketform', { 
+      title: `Edit Ticket #${ticket._id}`, 
+      path: `/tickets/${ticket._id}/edit`,
+      user: req.user,
+      ticket
+    });
+  } catch (error) {
+    console.error('Ticket edit form error:', error);
+    res.redirect('/tickets?error=Error loading ticket edit form');
+  }
+});
+
+// Create ticket
+router.post('/tickets', protect, async (req, res) => {
+  try {
+    const { title, description, category, priority } = req.body;
+    
+    // Create new ticket
+    const ticket = await Ticket.create({
+      title,
+      description,
+      category,
+      priority,
+      status: 'Open',
+      user: req.user.id
+    });
+    
+    // Add to history
+    ticket.history.push({
+      status: 'Open',
+      updatedAt: new Date(),
+      updatedBy: req.user.id
+    });
+    
+    await ticket.save();
+    
+    res.redirect(`/tickets/${ticket._id}?success=Ticket created successfully`);
+  } catch (error) {
+    console.error('Create ticket error:', error);
+    res.redirect('/tickets/new?error=Error creating ticket');
+  }
+});
+
+// Update ticket
+router.post('/tickets/:id', protect, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    
+    if (!ticket) {
+      return res.redirect('/tickets?error=Ticket not found');
+    }
+    
+    // Check if user has permission to update this ticket
+    if (req.user.role !== 'admin' && ticket.user.toString() !== req.user.id) {
+      return res.redirect('/tickets?error=You do not have permission to update this ticket');
+    }
+    
+    const { title, description, category, priority, status } = req.body;
+    
+    // Update ticket fields
+    ticket.title = title;
+    ticket.description = description;
+    ticket.category = category;
+    ticket.priority = priority;
+    
+    // Only admins can change status
+    if (req.user.role === 'admin' && status && status !== ticket.status) {
+      ticket.status = status;
+      
+      // Add to history
+      ticket.history.push({
+        status,
+        updatedAt: new Date(),
+        updatedBy: req.user.id
+      });
+    }
+    
+    await ticket.save();
+    
+    res.redirect(`/tickets/${ticket._id}?success=Ticket updated successfully`);
+  } catch (error) {
+    console.error('Update ticket error:', error);
+    res.redirect(`/tickets/${req.params.id}/edit?error=Error updating ticket`);
+  }
+});
+
+// Add comment to ticket
+router.post('/tickets/:id/comment', protect, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    
+    if (!ticket) {
+      return res.redirect('/tickets?error=Ticket not found');
+    }
+    
+    // Check if user has permission to comment on this ticket
+    if (req.user.role !== 'admin' && ticket.user.toString() !== req.user.id) {
+      return res.redirect('/tickets?error=You do not have permission to comment on this ticket');
+    }
+    
+    const { content } = req.body;
+    
+    if (!content || content.trim() === '') {
+      return res.redirect(`/tickets/${ticket._id}?error=Comment cannot be empty`);
+    }
+    
+    // Create new comment
     await Comment.create({
-      ticket: req.params.id,
-      user: req.user.id,
-      content: req.body.content
+      content,
+      ticket: ticket._id,
+      user: req.user.id
     });
     
-    res.redirect(`/ticket/${req.params.id}?success=Comment added successfully`);
+    res.redirect(`/tickets/${ticket._id}?success=Comment added successfully`);
   } catch (error) {
-    res.redirect(`/ticket/${req.params.id}?error=${encodeURIComponent(error.message)}`);
-  }
-});
-
-router.post('/ticket/:id/update', protect, async (req, res) => {
-  try {
-    const ticket = await Ticket.findById(req.params.id);
-    
-    if (!ticket) {
-      return res.redirect('/tickets?error=Ticket not found');
-    }
-    
-    // Make sure user is admin
-    if (req.user.role !== 'admin') {
-      return res.redirect('/tickets?error=Only admins can update ticket status');
-    }
-    
-    // Add admin ID to the update for history tracking
-    req.body.updatedBy = req.user.id;
-    
-    await Ticket.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-    
-    res.redirect(`/ticket/${req.params.id}?success=Ticket updated successfully`);
-  } catch (error) {
-    res.redirect(`/ticket/${req.params.id}?error=${encodeURIComponent(error.message)}`);
+    console.error('Add comment error:', error);
+    res.redirect(`/tickets/${req.params.id}?error=Error adding comment`);
   }
 });
 

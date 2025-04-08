@@ -1,4 +1,4 @@
-<%- include('partials/header', {title: 'Tickets', path: '/tickets'}) %>
+<%- include('partials/header', { title: 'Tickets', path: '/tickets' }) %>
 
 <div class="container mt-4">
   <div class="row mb-4">
@@ -6,82 +6,68 @@
       <h2>All Tickets</h2>
     </div>
     <div class="col-md-4">
-      <div class="form-group">
-        <label for="status-filter">Filter by Status</label>
-        <select class="form-control" id="status-filter">
+      <form action="/tickets" method="GET" class="d-flex">
+        <select name="status" class="form-select me-2" onchange="this.form.submit()">
           <option value="">All Statuses</option>
-          <option value="Open">Open</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Resolved">Resolved</option>
+          <option value="Open" <%= status === 'Open' ? 'selected' : '' %>>Open</option>
+          <option value="In Progress" <%= status === 'In Progress' ? 'selected' : '' %>>In Progress</option>
+          <option value="Resolved" <%= status === 'Resolved' ? 'selected' : '' %>>Resolved</option>
         </select>
-      </div>
+        <a href="/tickets/new" class="btn btn-primary">New Ticket</a>
+      </form>
     </div>
   </div>
 
+  <%- include('partials/alerts') %>
+
   <div class="card">
     <div class="card-body">
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Last Updated</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tickets-table-body">
-            <% if (tickets && tickets.length > 0) { %>
+      <% if (tickets && tickets.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               <% tickets.forEach(ticket => { %>
                 <tr>
                   <td><%= ticket.title %></td>
                   <td><%= ticket.category %></td>
                   <td>
-                    <span class="badge badge-<%= ticket.status.toLowerCase().replace(' ', '-') %>">
+                    <span class="badge bg-<%= getStatusClass(ticket.status) %>">
                       <%= ticket.status %>
                     </span>
                   </td>
                   <td><%= new Date(ticket.createdAt).toLocaleDateString() %></td>
                   <td><%= new Date(ticket.updatedAt).toLocaleDateString() %></td>
                   <td>
-                    <button class="btn btn-sm btn-info view-ticket" data-ticket-id="<%= ticket._id %>">
-                      View
-                    </button>
+                    <a href="/tickets/<%= ticket._id %>" class="btn btn-sm btn-info">View</a>
+                    <% if (user.role === 'admin' || ticket.user._id.toString() === user._id.toString()) { %>
+                      <a href="/tickets/<%= ticket._id %>/edit" class="btn btn-sm btn-primary">Edit</a>
+                      <form action="/tickets/<%= ticket._id %>?_method=DELETE" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this ticket?')">Delete</button>
+                      </form>
+                    <% } %>
                   </td>
                 </tr>
               <% }); %>
-            <% } else { %>
-              <tr>
-                <td colspan="6" class="text-center">No tickets found</td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info">
+          No tickets found. <a href="/tickets/new">Create a new ticket</a>
+        </div>
+      <% } %>
     </div>
   </div>
 </div>
 
-<!-- Ticket Detail Modal -->
-<div class="modal fade" id="ticket-detail-modal" tabindex="-1" role="dialog" aria-labelledby="ticket-detail-modal-label" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="ticket-detail-modal-label">Ticket Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body" id="ticket-detail-content">
-        <!-- Ticket details will be loaded here -->
-      </div>
-    </div>
-  </div>
-</div>
-
-<%- include('partials/footer') %>
-
-<script type="module" src="/js/tickets.js"></script>
-<script type="module" src="/js/ticket-list.js"></script> 
+<%- include('partials/footer') %> 

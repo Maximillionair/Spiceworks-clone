@@ -63,4 +63,5 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model('User', UserSchema);
+// Check if the model is already defined before creating a new one
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

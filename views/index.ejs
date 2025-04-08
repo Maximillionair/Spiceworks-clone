@@ -1,13 +1,48 @@
 <%- include('partials/header', {title: 'Welcome', path: '/'}) %>
 
-<div class="welcome-section">
-  <h2>Welcome to Helpdesk Support System</h2>
-  <p>Log in or register to get started.</p>
-  <div class="auth-buttons">
-    <a href="/login" class="btn btn-primary">Login</a>
-    <a href="/register" class="btn btn-secondary">Register</a>            
+<% if (user) { %>
+  <div class="welcome-section">
+    <h2>Welcome back, <%= user.name %>!</h2>
+    <div class="row mt-4">
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Dashboard</h5>
+            <p class="card-text">View your ticket statistics and recent activity.</p>
+            <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">My Tickets</h5>
+            <p class="card-text">View and manage your support tickets.</p>
+            <a href="/tickets" class="btn btn-primary">View Tickets</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">Profile</h5>
+            <p class="card-text">Manage your account settings and preferences.</p>
+            <a href="/profile" class="btn btn-primary">View Profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+<% } else { %>
+  <div class="welcome-section">
+    <h2>Welcome to Helpdesk Support System</h2>
+    <p>Log in or register to get started.</p>
+    <div class="auth-buttons">
+      <a href="/login" class="btn btn-primary">Login</a>
+      <a href="/register" class="btn btn-secondary">Register</a>            
+    </div>
+  </div>
+<% } %>
 
 <%- include('partials/footer') %>
 

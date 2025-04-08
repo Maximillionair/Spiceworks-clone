@@ -1,91 +1,131 @@
 const mongoose = require('mongoose');
 
-const TicketSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Please provide a title'],
-    trim: true,
-    maxlength: [100, 'Title cannot be more than 100 characters']
-  },
-  description: {
-    type: String,
-    required: [true, 'Please provide a description'],
-    trim: true,
-    maxlength: [1000, 'Description cannot be more than 1000 characters']
-  },
-  category: {
-    type: String,
-    required: [true, 'Please select a category'],
-    enum: [
-      'Hardware Issue',
-      'Software Issue',
-      'Network Issue',
-      'Account Issue',
-      'Other'
-    ]
-  },
-  status: {
-    type: String,
-    enum: ['Åpen', 'Under arbeid', 'Løst'],
-    default: 'Åpen'
-  },
-  priority: {
-    type: String,
-    enum: ['Low', 'Medium', 'High', 'Critical'],
-    default: 'Medium'
-  },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  },
-  history: [
-    {
-      status: {
+const ticketSchema = new mongoose.Schema({
+    title: {
         type: String,
-        enum: ['Åpen', 'Under arbeid', 'Løst']
-      },
-      updatedAt: {
-        type: Date,
-        default: Date.now
-      },
-      updatedBy: {
+        required: [true, 'Title is required'],
+        trim: true,
+        minlength: [3, 'Title must be at least 3 characters long'],
+        maxlength: [100, 'Title cannot exceed 100 characters']
+    },
+    description: {
+        type: String,
+        required: [true, 'Description is required'],
+        trim: true,
+        minlength: [10, 'Description must be at least 10 characters long']
+    },
+    status: {
+        type: String,
+        enum: ['Open', 'In Progress', 'Resolved'],
+        default: 'Open'
+    },
+    priority: {
+        type: String,
+        enum: ['Low', 'Medium', 'High', 'Critical'],
+        required: [true, 'Priority is required']
+    },
+    category: {
+        type: String,
+        enum: ['Hardware', 'Software', 'Network', 'Access', 'Other'],
+        required: [true, 'Category is required']
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User is required']
+    },
+    assignedTo: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-      }
+    },
+    comments: [{
+        content: {
+            type: String,
+            required: [true, 'Comment content is required'],
+            trim: true
+        },
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    history: [{
+        field: String,
+        oldValue: String,
+        newValue: String,
+        changedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        changedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
+}, {
+    timestamps: true
+});
+
+// Instance method to add a comment
+ticketSchema.methods.addComment = function(content, userId) {
+    this.comments.push({
+        content,
+        user: userId
+    });
+    return this.save();
+};
+
+// Instance method to update status
+ticketSchema.methods.updateStatus = function(newStatus, userId) {
+    if (this.status !== newStatus) {
+        this.history.push({
+            field: 'status',
+            oldValue: this.status,
+            newValue: newStatus,
+            changedBy: userId
+        });
+        this.status = newStatus;
     }
-  ]
+    return this.save();
+};
+
+// Instance method to assign ticket
+ticketSchema.methods.assign = function(userId, assignedBy) {
+    if (this.assignedTo?.toString() !== userId?.toString()) {
+        this.history.push({
+            field: 'assignedTo',
+            oldValue: this.assignedTo ? this.assignedTo.toString() : 'Unassigned',
+            newValue: userId ? userId.toString() : 'Unassigned',
+            changedBy: assignedBy
+        });
+        this.assignedTo = userId;
+    }
+    return this.save();
+};
+
+// Pre-save middleware to update timestamps
+ticketSchema.pre('save', function(next) {
+    this.updatedAt = new Date();
+    next();
 });
 
-// Add to history before updating ticket status
-TicketSchema.pre('findOneAndUpdate', async function(next) {
-  const docToUpdate = await this.model.findOne(this.getQuery());
-  
-  // If status is being updated
-  if (this._update.status && this._update.status !== docToUpdate.status) {
-    // Create history entry if status is changing
-    const historyEntry = {
-      status: this._update.status,
-      updatedAt: Date.now(),
-      updatedBy: this._update.updatedBy || docToUpdate.user // Fallback to user if updatedBy not provided
-    };
-    
-    // Add to history array
-    this._update.$push = { history: historyEntry };
-  }
-  
-  // Update the updatedAt timestamp
-  this._update.updatedAt = Date.now();
-  
-  next();
-});
+// Static method to get ticket statistics
+ticketSchema.statics.getStats = async function() {
+    return this.aggregate([
+        {
+            $group: {
+                _id: '$status',
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+};
 
-module.exports = mongoose.model('Ticket', TicketSchema);
+const Ticket = mongoose.model('Ticket', ticketSchema);
+
+module.exports = Ticket;

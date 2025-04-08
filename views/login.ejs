@@ -7,9 +7,9 @@
         <div class="card-body">
           <h2 class="text-center mb-4">Login</h2>
           
-          <div class="alert alert-danger d-none" id="error-alert" role="alert"></div>
+          <%- include('partials/alerts') %>
           
-          <form id="loginForm" class="needs-validation" novalidate>
+          <form action="/login" method="POST" class="needs-validation" novalidate>
             <div class="mb-3">
               <label for="email" class="form-label">Email address</label>
               <input type="email" class="form-control" id="email" name="email" required>
@@ -27,10 +27,7 @@
             </div>
 
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary">
-                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                Login
-              </button>
+              <button type="submit" class="btn btn-primary">Login</button>
             </div>
           </form>
 
@@ -44,5 +41,3 @@
 </div>
 
 <%- include('partials/footer') %>
-
-<script type="module" src="/js/login.js"></script>
