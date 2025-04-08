@@ -75,11 +75,10 @@ exports.register = async (req, res, next) => {
       name,
       email,
       password,
-      role: role || 'user'
+      role: role || 'admin'
     });
-    this.login()
-    // res.redirect('/login')
-    // sendTokenResponse(user, 201, res);
+    res.redirect('/login')
+    sendTokenResponse(user, 201, res);
   } catch (error) {
     res.status(400).json({
       success: false,
