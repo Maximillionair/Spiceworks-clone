@@ -1,40 +1,50 @@
-
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener('DOMContentLoaded', async () => {
     try {
-      // Fetch ticket stats
-      const statsRes = await fetch("/api/tickets/stats");
-      if (!statsRes.ok) throw new Error("Failed to fetch ticket stats");
+      // Fetch and display ticket stats
+      const statsRes = await fetch('/api/tickets/stats');
       const stats = await statsRes.json();
   
-      document.getElementById("open-tickets-count").textContent = stats.open || 0;
-      document.getElementById("in-progress-tickets-count").textContent = stats.inProgress || 0;
-      document.getElementById("resolved-tickets-count").textContent = stats.resolved || 0;
+      document.getElementById('open-tickets-count').textContent = stats.open || 0;
+      document.getElementById('in-progress-tickets-count').textContent = stats.inProgress || 0;
+      document.getElementById('resolved-tickets-count').textContent = stats.resolved || 0;
   
-      // Fetch recent tickets
-      const recentRes = await fetch("/api/tickets/recent");
-      if (!recentRes.ok) throw new Error("Failed to fetch recent tickets");
-      const recent = await recentRes.json();
+      // Fetch and render recent tickets
+      const recentRes = await fetch('/api/tickets/recent');
+      const recentTickets = await recentRes.json();
   
-      const ticketList = document.getElementById("recent-tickets-list");
-      ticketList.innerHTML = "";
+      const list = document.getElementById('recent-tickets-list');
+      list.innerHTML = ''; // Clear loading state
   
-      if (recent.length === 0) {
-        ticketList.innerHTML = "<li>No recent tickets found.</li>";
+      if (recentTickets.length === 0) {
+        list.innerHTML = '<li>No recent tickets.</li>';
       } else {
-        recent.forEach(ticket => {
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <strong>${ticket.title}</strong> <br>
-            <small>Status: ${ticket.status}</small> <br>
-            <small>Category: ${ticket.category}</small>
-          `;
-          ticketList.appendChild(li);
+        recentTickets.forEach(ticket => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${ticket.title}</strong> - ${ticket.category} (${ticket.status})`;
+          list.appendChild(li);
         });
       }
+  
+      // Optional: handle form submission with JS instead of traditional POST
+      const ticketForm = document.querySelector('form[action="/api/tickets"]');
+      if (ticketForm) {
+        ticketForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(ticketForm);
+          const ticketData = Object.fromEntries(formData.entries());
+  
+          try {
+            await HelpdeskAPI.createTicket(ticketData);
+            alert('Ticket submitted successfully!');
+            ticketForm.reset();
+          } catch (err) {
+            alert('Error submitting ticket: ' + err.message);
+          }
+        });
+      }
+  
     } catch (err) {
-      console.error("Dashboard error:", err);
-      const ticketList = document.getElementById("recent-tickets-list");
-      ticketList.innerHTML = "<li class='text-danger'>Unable to load dashboard data.</li>";
+      console.error('Error loading dashboard:', err);
     }
   });
   
