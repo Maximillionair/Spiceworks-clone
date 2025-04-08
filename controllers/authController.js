@@ -79,7 +79,7 @@ exports.register = async (req, res, next) => {
     });
     console.log(user);
     res.redirect('/login')
-    sendTokenResponse(user, 201, res);
+    // sendTokenResponse(user, 201, res);
   } catch (error) {
     res.status(400).json({
       success: false,
