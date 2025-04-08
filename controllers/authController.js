@@ -77,8 +77,9 @@ exports.register = async (req, res, next) => {
       password,
       role: role || 'user'
     });
-    res.redirect('/login')
-    sendTokenResponse(user, 201, res);
+    this.login()
+    // res.redirect('/login')
+    // sendTokenResponse(user, 201, res);
   } catch (error) {
     res.status(400).json({
       success: false,
