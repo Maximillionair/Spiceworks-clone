@@ -28,7 +28,7 @@
     <h3>Create New Support Ticket</h3>
   </div>
   <div class="card-body">
-    <form id="create-ticket-form">
+    <form action="/api/tickets" method="POST">
       <div class="form-group">
         <label for="title" class="form-label">Title</label>
         <input type="text" class="form-control" id="title" name="title" required>
