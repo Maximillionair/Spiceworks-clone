@@ -100,7 +100,7 @@ exports.login = async (req, res, next) => {
         success: false,
         message: 'Please provide an email and password'
       });
-    }
+    };
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
@@ -110,7 +110,7 @@ exports.login = async (req, res, next) => {
         success: false,
         message: 'Invalid credentials'
       });
-    }
+    };
 
     // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
@@ -121,10 +121,11 @@ exports.login = async (req, res, next) => {
         message: 'Invalid credentials'
       });
     } else {
-      
-    }
-    res.redirect('/');
-    sendTokenResponse(user, 200, res);
+      sendTokenResponse(user, 200, res);
+      return res.redirect('/')
+    };
+    
+    
   } catch (error) {
     res.status(500).json({
       success: false,
