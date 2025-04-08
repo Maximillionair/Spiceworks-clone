@@ -4,14 +4,28 @@ const User = require('../models/user');
 // @desc    Create new ticket
 // @route   POST /api/tickets
 // @access  Private
+// In ticketController.js, modify createTicket:
 exports.createTicket = async (req, res, next) => {
   try {
-    // Add user to req.body
     req.body.user = req.user.id;
-    
     const ticket = await Ticket.create(req.body);
+    
+    // Check if it's an API or form request
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(201).json({
+        success: true,
+        data: ticket
+      });
+    }
+    
     res.redirect('/dashboard?success=Ticket created successfully');
   } catch (error) {
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
     res.redirect('/dashboard?error=' + encodeURIComponent(error.message));
   }
 };
