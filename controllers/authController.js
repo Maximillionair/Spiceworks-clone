@@ -36,13 +36,14 @@ exports.register = async (req, res, next) => {
       password,
       role: role || 'user'
     });
-    
-    // Set cookie and redirect to login
+
+    // Set token in cookie
     setTokenCookie(user, res);
+    // Redirect with success message
     res.redirect('/login?success=Account created successfully. Please log in.');
   } catch (error) {
-    // Return to registration page with error
-    res.redirect('/register?error=' + encodeURIComponent(error.message));
+    // Redirect with an improved error message
+    res.redirect(`/register?error=${encodeURIComponent("Error creating account: " + error.message)}`);
   }
 };
 
@@ -55,28 +56,27 @@ exports.login = async (req, res, next) => {
 
     // Validate email & password
     if (!email || !password) {
-      return res.redirect('/login?error=Please provide email and password');
+      return res.redirect('/login?error=' + encodeURIComponent("Please provide both email and password"));
     }
 
-    // Check for user
+    // Check if the user exists
     const user = await User.findOne({ email }).select('+password');
-
     if (!user) {
-      return res.redirect('/login?error=Invalid credentials');
+      return res.redirect('/login?error=' + encodeURIComponent("Invalid email or password"));
     }
 
     // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
-      return res.redirect('/login?error=Invalid credentials');
+      return res.redirect('/login?error=' + encodeURIComponent("Invalid email or password"));
     }
-    
-    // Set cookie and redirect to dashboard
+
+    // Set token and redirect to dashboard
     setTokenCookie(user, res);
     res.redirect('/dashboard');
   } catch (error) {
-    res.redirect('/login?error=' + encodeURIComponent(error.message));
+    // General error handling
+    res.redirect(`/login?error=${encodeURIComponent("Error logging in: " + error.message)}`);
   }
 };
 
