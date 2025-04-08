@@ -1,33 +1,23 @@
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault(); // Stop the form from submitting normally (GET request)
+document.addEventListener('DOMContentLoaded', () => {
+    const registerForm = document.getElementById('register-form');
+    if (!registerForm) return;
   
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const passwordConfirm = document.getElementById('passwordConfirm').value;
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
   
-    try {
-      const res = await fetch('http://10.12.10.231:4000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name, email, password, passwordConfirm })
-      });
+      const userData = {
+        name: registerForm.name.value,
+        email: registerForm.email.value,
+        password: registerForm.password.value,
+        role: registerForm.role?.value || 'user'  // if you have roles
+      };
   
-      const data = await res.json();
-      console.log(data);
-  
-      if (res.ok) {
-        alert('Registration successful!');
-        // maybe redirect: window.location.href = '/login';
-      } else {
-        alert(data.message || 'Something went wrong!');
+      try {
+        await HelpdeskAPI.register(userData);
+        alert('Registration successful. You can now log in.');
+        window.location.href = '/login';
+      } catch (err) {
+        alert(`Registration failed: ${err.message}`);
       }
-  
-    } catch (err) {
-      console.error(err);
-      alert('Request failed.');
-    }
+    });
   });
-  

@@ -1,15 +1,17 @@
-// login.js
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.querySelector('#login-form');
-    if (!form) return;
+    const loginForm = document.querySelector('#login-form');
+    if (!loginForm) return;
   
-    form.addEventListener('submit', (e) => {
-      const email = form.email.value.trim();
-      const password = form.password.value.trim();
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = loginForm.email.value;
+      const password = loginForm.password.value;
   
-      if (!email || !password) {
-        e.preventDefault();
-        alert('Please fill in all fields.');
+      try {
+        await apiRequest('/api/auth/login', 'POST', { email, password });
+        window.location.href = '/dashboard';
+      } catch (err) {
+        alert('Login failed: ' + err.message);
       }
     });
   });

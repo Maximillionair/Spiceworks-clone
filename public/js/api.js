@@ -39,12 +39,18 @@ const apiRequest = async (url, method = 'GET', body = null) => {
   const getTicketById = async (ticketId) => {
     return await apiRequest(`/api/tickets/${ticketId}`);
   };
+
+  const getTicketStats = () => apiRequest('/api/tickets/stats');
+const getRecentTickets = () => apiRequest('/api/tickets/recent');
+
   
   // Export if needed
   window.HelpdeskAPI = {
     getCurrentUser,
     createTicket,
     getTickets,
-    getTicketById
+    getTicketById,
+    getTicketStats,
+    getRecentTickets
   };
   
