@@ -121,8 +121,8 @@ exports.login = async (req, res, next) => {
         message: 'Invalid credentials'
       });
     } else {
-      sendTokenResponse(user, 200, res);
-      return res.redirect('/')
+      // sendTokenResponse(user, 200, res);
+      res.redirect('/')
     };
     
     
