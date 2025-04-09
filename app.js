@@ -39,28 +39,13 @@ app.use(morgan('dev'));
 // Conditionally apply Helmet based on environment
 // Security headers configuration
 // Security headers - Modified to allow HTTP in development
-if (process.env.NODE_ENV === 'production') {
-  // Production settings - full security
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'"]
-      }
-    }
-  }));
-} else {
+
   // Development settings - allow HTTP
   console.log('Using development Helmet settings (HTTP allowed)');
   app.use(helmet({
     contentSecurityPolicy: false,
     hsts: false
   }));
-}
 
 // Apply Helmet with the configuration
 // app.use(helmet(helmetConfig));
