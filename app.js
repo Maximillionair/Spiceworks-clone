@@ -12,6 +12,7 @@ dotenv.config();
 
 // Route files
 const viewRoutes = require('./routes/viewRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 
 // Initialize app
 const app = express();
@@ -54,6 +55,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Mount routes
 app.use('/', viewRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

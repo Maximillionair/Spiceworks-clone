@@ -57,34 +57,38 @@
       </div>
 
       <!-- Comments Section -->
-      <div class="card mt-4 comments-card">
+      <div class="card mb-4">
         <div class="card-header">
-          <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Comments</h5>
+          <h5 class="mb-0">Comments</h5>
         </div>
         <div class="card-body">
-          <% if (comments && comments.length > 0) { %>
-            <% comments.forEach(comment => { %>
+          <% if (ticket.comments && ticket.comments.length > 0) { %>
+            <% ticket.comments.forEach(comment => { %>
               <div class="comment mb-3">
-                <div class="d-flex justify-content-between">
-                  <strong><%= comment.user ? comment.user.name : 'Unknown User' %></strong>
-                  <small class="text-muted"><%= new Date(comment.createdAt).toLocaleString() %></small>
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong><%= comment.user.name %></strong>
+                    <small class="text-muted ms-2"><%= new Date(comment.createdAt).toLocaleString() %></small>
+                  </div>
+                  <% if (user.role === 'admin' || comment.user._id.toString() === user._id.toString()) { %>
+                    <form action="/tickets/<%= ticket._id %>/comments/<%= comment._id %>?_method=DELETE" method="POST" class="d-inline">
+                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                  <% } %>
                 </div>
-                <p class="mb-0"><%= comment.content %></p>
+                <p class="mt-2 mb-0"><%= comment.content %></p>
               </div>
             <% }); %>
           <% } else { %>
             <p class="text-muted">No comments yet.</p>
           <% } %>
 
-          <!-- Add Comment Form -->
-          <form action="/tickets/<%= ticket._id %>/comments" method="POST" class="mt-4">
-            <div class="form-group">
-              <label for="content">Add a comment</label>
+          <form action="/tickets/<%= ticket._id %>/comment" method="POST" class="mt-4">
+            <div class="mb-3">
+              <label for="content" class="form-label">Add a comment</label>
               <textarea class="form-control" id="content" name="content" rows="3" required></textarea>
             </div>
-            <button type="submit" class="btn btn-primary mt-2">
-              <i class="bi bi-send"></i> Submit Comment
-            </button>
+            <button type="submit" class="btn btn-primary">Submit</button>
           </form>
         </div>
       </div>

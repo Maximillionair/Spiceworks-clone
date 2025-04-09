@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/authmiddleware');
 const Ticket = require('../models/ticket');
 const Comment = require('../models/comment');
-const User = require('../models/user');
+const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getHomePage, getDashboardPage, getProfilePage } = require('../controllers/pageController');
@@ -255,7 +255,7 @@ router.get('/tickets/:id', protect, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id)
       .populate('user', 'name email')
-      .populate('history.updatedBy', 'name')
+      .populate('history.changedBy', 'name')
       .populate('comments.user', 'name role');
     
     if (!ticket) {
@@ -267,17 +267,11 @@ router.get('/tickets/:id', protect, async (req, res) => {
       return res.redirect('/tickets?error=You do not have permission to view this ticket');
     }
     
-    // Get comments for this ticket
-    const comments = await Comment.find({ ticket: req.params.id })
-      .populate('user', 'name role')
-      .sort('createdAt');
-    
     res.render('ticketdetail', { 
       title: `Ticket #${ticket._id}`, 
       path: `/tickets/${ticket._id}`,
       user: req.user,
       ticket,
-      comments,
       getStatusClass
     });
   } catch (error) {
@@ -417,6 +411,35 @@ router.post('/tickets/:id/comment', protect, async (req, res) => {
   } catch (error) {
     console.error('Add comment error:', error);
     res.redirect(`/tickets/${req.params.id}?error=Error adding comment`);
+  }
+});
+
+// Delete comment from ticket
+router.delete('/tickets/:ticketId/comments/:commentId', protect, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.ticketId);
+    
+    if (!ticket) {
+      return res.redirect('/tickets?error=Ticket not found');
+    }
+    
+    const comment = await Comment.findById(req.params.commentId);
+    
+    if (!comment) {
+      return res.redirect(`/tickets/${ticket._id}?error=Comment not found`);
+    }
+    
+    // Check if user has permission to delete this comment
+    if (req.user.role !== 'admin' && comment.user.toString() !== req.user.id) {
+      return res.redirect(`/tickets/${ticket._id}?error=You do not have permission to delete this comment`);
+    }
+    
+    await comment.remove();
+    
+    res.redirect(`/tickets/${ticket._id}?success=Comment deleted successfully`);
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.redirect(`/tickets/${req.params.ticketId}?error=Error deleting comment`);
   }
 });
 

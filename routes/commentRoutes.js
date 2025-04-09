@@ -1,20 +1,24 @@
 const express = require('express');
-const { addComment, getTicketComments, deleteComment } = require('../controllers/commentController');
-const { protect } = require('../middleware/authmiddleware');
-const { apiLimiter } = require('../middleware/rateLimitMiddleware');
-
 const router = express.Router();
+const { protect } = require('../middleware/auth');
+const { addComment, deleteComment } = require('../controllers/commentController');
+const { check } = require('express-validator');
 
-// Apply protection to all routes
-router.use(protect);
-router.use(apiLimiter);
+// @route   POST /tickets/:ticketId/comments
+router.post(
+  '/tickets/:ticketId/comments',
+  protect,
+  [
+    check('content', 'Comment content is required').not().isEmpty()
+  ],
+  addComment
+);
 
-// Routes for comments
-router.route('/tickets/:ticketId/comments')
-  .post(addComment)
-  .get(getTicketComments);
-
-// Comment deletion route
-router.route('/:id').delete(deleteComment);
+// @route   DELETE /tickets/:ticketId/comments/:commentId
+router.delete(
+  '/tickets/:ticketId/comments/:commentId',
+  protect,
+  deleteComment
+);
 
 module.exports = router;

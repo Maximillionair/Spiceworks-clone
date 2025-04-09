@@ -1,4 +1,4 @@
-const Ticket = require('../models/Ticket');
+const Ticket = require('../models/ticket');
 const Comment = require('../models/comment');
 const { StatusCodes } = require('http-status-codes');
 const { validateTicketInput, validateCommentInput } = require('../middleware/validatorMiddleware');
