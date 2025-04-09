@@ -12,7 +12,7 @@ async function connectDB() {
     });
 
     // Use environment variable for connection string with fallback
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/helpdesk');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://10.12.10.232/helpdesk');
     
     // This will print but the "once" handler above will provide more confirmation
     console.log('MongoDB connection initiated');
