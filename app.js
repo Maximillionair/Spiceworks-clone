@@ -81,5 +81,9 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
-
+// Middleware to rewrite HTTPS URLs to HTTP
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "upgrade-insecure-requests: ;");
+  next();
+});
 module.exports = app;
