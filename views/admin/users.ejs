@@ -1,0 +1,226 @@
+<%- include('../partials/header', {title: 'User Management', path: '/admin/users'}) %>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="gradient-text">User Management</h1>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="/admin/users/add" class="btn btn-primary">
+        <i class="bi bi-person-plus"></i> Add New User
+      </a>
+    </div>
+  </div>
+
+  <%- include('../partials/alerts') %>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(user => { %>
+              <tr>
+                <td><%= user.name %></td>
+                <td><%= user.email %></td>
+                <td>
+                  <span class="badge bg-<%= user.role === 'admin' ? 'danger' : 
+                                         user.role === 'second_line' ? 'warning' :
+                                         user.role === 'first_line' ? 'info' : 'secondary' %>">
+                    <%= user.role.charAt(0).toUpperCase() + user.role.slice(1).replace('_', ' ') %>
+                  </span>
+                </td>
+                <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                <td>
+                  <div class="btn-group">
+                    <a href="/admin/users/<%= user._id %>/edit" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="confirmDelete('<%= user._id %>', '<%= user.name %>')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <span id="deleteUserName"></span>?
+        This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="POST" style="display: inline;">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmDelete(userId, userName) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteForm').action = `/admin/users/${userId}`;
+    modal.show();
+  }
+</script>
+
+<%- include('../partials/footer') %>
+
+<style>
+/* CSS: Ensure modal is centered and backdrop covers the screen */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1050;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-dialog {
+  position: relative;
+  width: auto;
+  margin: 1.75rem auto;
+  max-width: 500px;
+  transform: translate(0, 0);
+  transition: transform 0.3s ease-out;
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - 3.5rem);
+}
+
+/* Ensure modal content is above other elements */
+.modal-content {
+  position: relative;
+  background-color: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  box-shadow: var(--box-shadow);
+  z-index: 1055;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--dark-border);
+}
+
+.modal-body {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 1rem;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem;
+  border-top: 1px solid var(--dark-border);
+}
+
+.modal .form-control,
+.modal .form-select {
+  background-color: var(--dark-hover);
+  border-color: var(--dark-border);
+  color: var(--dark-text);
+}
+
+.modal .form-control:disabled {
+  background-color: rgba(42, 42, 42, 0.3);
+  color: var(--dark-text-secondary);
+}
+
+.modal .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Toast styles */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 250px;
+  z-index: 9999;
+}
+
+.toast .toast-body {
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.toast .btn-close {
+  margin-left: 0.5rem;
+}
+
+/* Button styles */
+.btn-group {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-outline-primary, .btn-outline-danger {
+  border-width: 1px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.btn-outline-primary:hover, .btn-outline-danger:hover {
+  opacity: 0.8;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  padding-right: 0 !important;
+}
+</style>
+</body>
+</html> 

@@ -4,8 +4,13 @@ const { body, validationResult } = require('express-validator');
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({
-            success: false,
+        if (req.xhr || req.headers.accept.includes('application/json')) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        return res.status(400).render('error', {
+            title: 'Validation Error',
+            path: '',
+            user: req.user,
             errors: errors.array()
         });
     }
@@ -63,7 +68,41 @@ const validateComment = [
     validate
 ];
 
+// User validation rules
+const validateUser = [
+    body('name')
+        .trim()
+        .notEmpty()
+        .withMessage('Name is required')
+        .isLength({ min: 2, max: 50 })
+        .withMessage('Name must be between 2 and 50 characters'),
+    
+    body('email')
+        .trim()
+        .notEmpty()
+        .withMessage('Email is required')
+        .isEmail()
+        .withMessage('Please provide a valid email'),
+    
+    body('password')
+        .trim()
+        .notEmpty()
+        .withMessage('Password is required')
+        .isLength({ min: 6 })
+        .withMessage('Password must be at least 6 characters'),
+    
+    body('role')
+        .optional()
+        .trim()
+        .isIn(['admin', 'first_line', 'second_line', 'user'])
+        .withMessage('Invalid role'),
+    
+    validate
+];
+
 module.exports = {
+    validate,
     validateTicket,
-    validateComment
+    validateComment,
+    validateUser
 }; 

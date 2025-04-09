@@ -19,6 +19,35 @@
         </a>
       </li>
       <li class="nav-item">
+        <a href="/manual" class="nav-link <%= path === '/manual' ? 'active' : '' %>">
+          <i class="bi bi-book"></i> Manual
+        </a>
+      </li>
+      <% if (user.role === 'admin') { %>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-shield-lock"></i> Admin
+          </a>
+          <ul class="dropdown-menu dropdown-menu-dark">
+            <li>
+              <a class="dropdown-item" href="/admin/dashboard">
+                <i class="bi bi-graph-up"></i> Statistics
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/users">
+                <i class="bi bi-people"></i> User Management
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/reports">
+                <i class="bi bi-file-earmark-text"></i> Reports
+              </a>
+            </li>
+          </ul>
+        </li>
+      <% } %>
+      <li class="nav-item">
         <a href="/profile" class="nav-link <%= path === '/profile' ? 'active' : '' %>">
           <i class="bi bi-person"></i> Profile
         </a>

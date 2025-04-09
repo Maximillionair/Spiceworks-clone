@@ -446,4 +446,13 @@ router.delete('/tickets/:ticketId/comments/:commentId', protect, async (req, res
 // Profile route
 router.get('/profile', protect, getProfilePage);
 
+// Manual route
+router.get('/manual', (req, res) => {
+  res.render('manual', {
+    title: 'User Manual',
+    path: '/manual',
+    user: req.user
+  });
+});
+
 module.exports = router;

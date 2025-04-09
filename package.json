@@ -20,6 +20,8 @@
         "nodemon": "^3.1.9"
     },
     "scripts": {
-        "start": "nodemon server.js"
+        "start": "nodemon server.js",
+        "seed": "node scripts/seedTickets.js",
+        "git": "git add . && git commit -m 'update' && git push origin main"
     }
 }

@@ -1,10 +1,10 @@
 const Ticket = require('../models/ticket');
 const Comment = require('../models/comment');
 const { StatusCodes } = require('http-status-codes');
-const { validateTicketInput, validateCommentInput } = require('../middleware/validatorMiddleware');
-const { validateTicket } = require('../middleware/validators');
+const { validateTicket, validateComment } = require('../middleware/validators');
 const { getStatusClass } = require('../utils/helpers');
 const { validationResult } = require('express-validator');
+const User = require('../models/User');
 
 // @desc    Create new ticket
 // @route   POST /tickets
@@ -45,19 +45,40 @@ const createTicket = async (req, res) => {
 // @access  Private
 const getTickets = async (req, res) => {
   try {
-    const tickets = await Ticket.find({ user: req.user.id })
-      .sort({ createdAt: -1 });
+    let query = {};
+    
+    // Regular users can only see their own tickets
+    if (req.user.role === 'user') {
+      query.user = req.user.id;
+    }
+    // Support staff can see tickets assigned to their role
+    else if (['first_line', 'second_line'].includes(req.user.role)) {
+      query.assignedRole = req.user.role;
+    }
+    
+    // Apply filters if provided
+    if (req.query.status) query.status = req.query.status;
+    if (req.query.priority) query.priority = req.query.priority;
+    if (req.query.category) query.category = req.query.category;
+    
+    const tickets = await Ticket.find(query)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort('-updatedAt');
 
-    res.render('ticketpage', {
-      title: 'My Tickets',
+    res.render('tickets', {
+      title: 'Tickets',
       tickets,
+      filters: req.query,
+      user: req.user,
       getStatusClass
     });
   } catch (error) {
     console.error('Get tickets error:', error);
     res.status(500).render('error', {
       title: 'Error',
-      message: 'Server error'
+      message: 'Error loading tickets',
+      error: process.env.NODE_ENV === 'development' ? error : {}
     });
   }
 };
@@ -323,6 +344,160 @@ const addComment = async (req, res) => {
   }
 };
 
+// @desc    Assign ticket to support staff
+// @route   PUT /tickets/:id/assign
+// @access  Private/Admin
+const assignTicket = async (req, res) => {
+  try {
+    const { assignedTo, assignedRole } = req.body;
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+
+    // Verify the assigned user exists and has the correct role
+    const assignedUser = await User.findById(assignedTo);
+    if (!assignedUser || assignedUser.role !== assignedRole) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid assignment. User must have the correct support role.'
+      });
+    }
+
+    ticket.assignedTo = assignedTo;
+    ticket.assignedRole = assignedRole;
+    ticket.status = 'Assigned';
+
+    // Add to history
+    ticket.history.push({
+      field: 'assignment',
+      oldValue: ticket.assignedTo ? ticket.assignedTo.toString() : 'Unassigned',
+      newValue: assignedTo,
+      changedBy: req.user.id
+    });
+
+    await ticket.save();
+
+    const updatedTicket = await Ticket.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email');
+
+    res.json({
+      success: true,
+      data: updatedTicket
+    });
+  } catch (error) {
+    console.error('Assign ticket error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning ticket'
+    });
+  }
+};
+
+// @desc    Submit feedback for resolved ticket
+// @route   POST /tickets/:id/feedback
+// @access  Private
+const submitFeedback = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const ticket = await Ticket.findById(req.params.id);
+
+    if (!ticket) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ticket not found'
+      });
+    }
+
+    // Only allow feedback on resolved tickets
+    if (ticket.status !== 'Resolved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only submit feedback for resolved tickets'
+      });
+    }
+
+    // Only ticket owner can submit feedback
+    if (ticket.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only ticket owner can submit feedback'
+      });
+    }
+
+    ticket.feedback = {
+      rating,
+      comment,
+      submittedAt: new Date()
+    };
+    ticket.status = 'Closed';
+
+    await ticket.save();
+
+    res.json({
+      success: true,
+      data: ticket
+    });
+  } catch (error) {
+    console.error('Submit feedback error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting feedback'
+    });
+  }
+};
+
+// @desc    Search tickets
+// @route   GET /tickets/search
+// @access  Private
+const searchTickets = async (req, res) => {
+  try {
+    const { query, status, priority, category, assignedRole } = req.query;
+    
+    // Build search criteria
+    const searchCriteria = {};
+    
+    // Regular users can only see their own tickets
+    if (req.user.role === 'user') {
+      searchCriteria.user = req.user.id;
+    }
+    // Support staff can see tickets assigned to their role
+    else if (['first_line', 'second_line'].includes(req.user.role)) {
+      searchCriteria.assignedRole = req.user.role;
+    }
+    
+    if (query) {
+      searchCriteria.searchableText = new RegExp(query, 'i');
+    }
+    if (status) searchCriteria.status = status;
+    if (priority) searchCriteria.priority = priority;
+    if (category) searchCriteria.category = category;
+    if (assignedRole) searchCriteria.assignedRole = assignedRole;
+
+    const tickets = await Ticket.find(searchCriteria)
+      .populate('user', 'name email')
+      .populate('assignedTo', 'name email')
+      .sort('-updatedAt');
+
+    res.json({
+      success: true,
+      count: tickets.length,
+      data: tickets
+    });
+  } catch (error) {
+    console.error('Search tickets error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error searching tickets'
+    });
+  }
+};
+
 module.exports = {
   getTickets,
   getTicket,
@@ -331,5 +506,8 @@ module.exports = {
   deleteTicket,
   getTicketStats,
   getRecentTickets,
-  addComment
+  addComment,
+  assignTicket,
+  submitFeedback,
+  searchTickets
 };

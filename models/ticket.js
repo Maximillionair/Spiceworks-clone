@@ -16,7 +16,7 @@ const ticketSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'In Progress', 'Resolved'],
+        enum: ['Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'],
         default: 'Open'
     },
     priority: {
@@ -38,6 +38,25 @@ const ticketSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    assignedRole: {
+        type: String,
+        enum: ['first_line', 'second_line'],
+        default: 'first_line'
+    },
+    feedback: {
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5
+        },
+        comment: {
+            type: String,
+            trim: true
+        },
+        submittedAt: {
+            type: Date
+        }
+    },
     comments: [{
         content: {
             type: String,
@@ -52,6 +71,10 @@ const ticketSchema = new mongoose.Schema({
         createdAt: {
             type: Date,
             default: Date.now
+        },
+        isInternal: {
+            type: Boolean,
+            default: false
         }
     }],
     history: [{
@@ -66,9 +89,19 @@ const ticketSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
+    }],
+    searchableText: {
+        type: String,
+        select: false
+    }
 }, {
     timestamps: true
+});
+
+// Pre-save middleware to update searchable text
+ticketSchema.pre('save', function(next) {
+    this.searchableText = `${this.title} ${this.description} ${this.status} ${this.priority} ${this.category}`.toLowerCase();
+    next();
 });
 
 // Instance method to add a comment

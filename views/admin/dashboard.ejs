@@ -1,0 +1,179 @@
+<%- include('../partials/header', {title: 'Admin Dashboard', path: '/admin/dashboard'}) %>
+
+<div class="container mt-4">
+    <h1 class="gradient-text mb-4">Admin Dashboard</h1>
+
+    <!-- User Statistics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-people"></i> User Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Total Users</h6>
+                        <h3><%= (stats.users.user || 0) + (stats.users.first_line || 0) + (stats.users.second_line || 0) + (stats.users.admin || 0) %></h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>1st Line Support</h6>
+                        <h3><%= stats.users.first_line || 0 %></h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>2nd Line Support</h6>
+                        <h3><%= stats.users.second_line || 0 %></h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <h6>Regular Users</h6>
+                        <h3><%= stats.users.user || 0 %></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Statistics -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-ticket"></i> Ticket Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>1st Line Support Tickets</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% const firstLineStats = stats.tickets.first_line || {} %>
+                                <tr>
+                                    <td>Open</td>
+                                    <td><%= firstLineStats.Open || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>In Progress</td>
+                                    <td><%= firstLineStats['In Progress'] || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>Resolved</td>
+                                    <td><%= firstLineStats.Resolved || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>Closed</td>
+                                    <td><%= firstLineStats.Closed || 0 %></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>2nd Line Support Tickets</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% const secondLineStats = stats.tickets.second_line || {} %>
+                                <tr>
+                                    <td>Open</td>
+                                    <td><%= secondLineStats.Open || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>In Progress</td>
+                                    <td><%= secondLineStats['In Progress'] || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>Resolved</td>
+                                    <td><%= secondLineStats.Resolved || 0 %></td>
+                                </tr>
+                                <tr>
+                                    <td>Closed</td>
+                                    <td><%= secondLineStats.Closed || 0 %></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="/admin/users" class="btn btn-primary w-100 mb-2">
+                        <i class="bi bi-people"></i> Manage Users
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/tickets" class="btn btn-info w-100 mb-2">
+                        <i class="bi bi-ticket"></i> View All Tickets
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="/admin/reports" class="btn btn-secondary w-100 mb-2">
+                        <i class="bi bi-graph-up"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        background: var(--dark-card);
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card h6 {
+        color: var(--dark-text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card h3 {
+        color: var(--primary-color);
+        margin: 0;
+    }
+
+    .table {
+        background: var(--dark-card);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table th {
+        background: var(--dark-hover);
+        border-bottom: 2px solid var(--dark-border);
+    }
+
+    .table td, .table th {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+</style>
+
+<%- include('../partials/footer') %> 

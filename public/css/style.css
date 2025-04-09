@@ -973,3 +973,89 @@ hr {
   border-color: var(--dark-border);
   opacity: 1;
 }
+
+/* Fix for modal hover issues */
+.modal {
+  z-index: 1050;
+  pointer-events: auto;
+  transition: none;
+}
+
+.modal-content {
+  background-color: var(--dark-card-bg);
+  border: 1px solid var(--dark-border);
+  box-shadow: var(--box-shadow);
+  transform: none !important;
+  transition: none !important;
+  pointer-events: auto;
+}
+
+.modal-content:hover {
+  box-shadow: var(--box-shadow) !important;
+  transform: none !important;
+}
+
+.modal-dialog {
+  transform: none !important;
+  transition: none !important;
+  pointer-events: auto;
+}
+
+/* Fix for table hover issues */
+.table-hover tbody tr {
+  position: relative;
+  z-index: 1;
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--dark-hover);
+  transition: background-color 0.2s ease;
+  z-index: 2;
+}
+
+/* Ensure modals don't get affected by card hover */
+.modal .card:hover {
+  transform: none;
+  box-shadow: var(--box-shadow);
+}
+
+/* Prevent hover effects from affecting modal content */
+.modal * {
+  pointer-events: auto;
+}
+
+/* Modal styles to prevent flickering */
+.modal,
+.modal-dialog,
+.modal-content,
+.modal-backdrop {
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.modal.show .modal-dialog {
+  transform: none !important;
+}
+
+.modal-content {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal.fade {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Prevent modal content from being affected by hover effects */
+.modal * {
+  transition: none !important;
+}
+
+.modal .card:hover,
+.modal .btn:hover,
+.modal *:hover {
+  transform: none !important;
+  transition: none !important;
+  box-shadow: inherit !important;
+}

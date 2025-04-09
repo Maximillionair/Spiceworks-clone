@@ -13,6 +13,7 @@ dotenv.config();
 // Route files
 const viewRoutes = require('./routes/viewRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Initialize app
 const app = express();
@@ -31,10 +32,8 @@ app.use(cookieParser());
 // Method override for PUT/DELETE requests
 app.use(methodOverride('_method'));
 
-// Dev logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+// Enable logging middleware in all environments
+app.use(morgan('dev'));
 
 // Security headers
 app.use(helmet({
@@ -56,6 +55,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Mount routes
 app.use('/', viewRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/admin', adminRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

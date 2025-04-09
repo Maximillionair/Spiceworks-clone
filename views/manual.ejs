@@ -1,0 +1,167 @@
+<%- include('partials/header', {title: 'User Manual', path: '/manual'}) %>
+
+<div class="container mt-4">
+    <h1 class="gradient-text mb-4">User Manual</h1>
+
+    <div class="row">
+        <!-- Regular Users Guide -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> For Users</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary mb-3">Creating a Ticket</h6>
+                    <ol class="manual-list">
+                        <li>Click on "New Ticket" from the dashboard or tickets page</li>
+                        <li>Fill in the ticket details:
+                            <ul>
+                                <li>Title: Brief description of the issue</li>
+                                <li>Category: Select the most relevant category</li>
+                                <li>Priority: Choose based on urgency</li>
+                                <li>Description: Detailed explanation of the problem</li>
+                            </ul>
+                        </li>
+                        <li>Submit the ticket and wait for support team response</li>
+                    </ol>
+
+                    <h6 class="text-primary mb-3">Managing Your Tickets</h6>
+                    <ul class="manual-list">
+                        <li>View all your tickets in the "Tickets" section</li>
+                        <li>Track ticket status and updates</li>
+                        <li>Respond to support team comments</li>
+                        <li>Provide feedback once ticket is resolved</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- First Line Support Guide -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-headset"></i> For 1st Line Support</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary mb-3">Handling Tickets</h6>
+                    <ol class="manual-list">
+                        <li>Monitor the ticket queue regularly</li>
+                        <li>Assess ticket priority and category</li>
+                        <li>Provide initial response within:
+                            <ul>
+                                <li>Critical: 1 hour</li>
+                                <li>High: 4 hours</li>
+                                <li>Medium: 8 hours</li>
+                                <li>Low: 24 hours</li>
+                            </ul>
+                        </li>
+                        <li>Update ticket status as you work on it</li>
+                        <li>Escalate to 2nd line if needed</li>
+                    </ol>
+
+                    <h6 class="text-primary mb-3">Best Practices</h6>
+                    <ul class="manual-list">
+                        <li>Document all actions taken</li>
+                        <li>Use internal notes for support team communication</li>
+                        <li>Follow up with users regularly</li>
+                        <li>Mark tickets as resolved when completed</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Line Support Guide -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> For 2nd Line Support</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary mb-3">Advanced Support</h6>
+                    <ol class="manual-list">
+                        <li>Handle escalated tickets from 1st line</li>
+                        <li>Investigate complex technical issues</li>
+                        <li>Provide technical guidance to 1st line</li>
+                        <li>Document solutions for knowledge base</li>
+                    </ol>
+
+                    <h6 class="text-primary mb-3">Responsibilities</h6>
+                    <ul class="manual-list">
+                        <li>Maintain technical documentation</li>
+                        <li>Identify recurring issues</li>
+                        <li>Suggest system improvements</li>
+                        <li>Train 1st line support staff</li>
+                    </ul>
+
+                    <h6 class="text-primary mb-3">Resolution Guidelines</h6>
+                    <ul class="manual-list">
+                        <li>Thoroughly test solutions</li>
+                        <li>Document workarounds</li>
+                        <li>Update knowledge base</li>
+                        <li>Follow up on implemented solutions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Common Guidelines -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Common Guidelines</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">Communication Guidelines</h6>
+                    <ul class="manual-list">
+                        <li>Be professional and courteous at all times</li>
+                        <li>Use clear and concise language</li>
+                        <li>Acknowledge receipt of all communications</li>
+                        <li>Keep users informed of progress</li>
+                        <li>Document all significant communications</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">Best Practices</h6>
+                    <ul class="manual-list">
+                        <li>Follow security protocols</li>
+                        <li>Maintain user privacy</li>
+                        <li>Update ticket status promptly</li>
+                        <li>Escalate issues when necessary</li>
+                        <li>Document solutions for future reference</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .manual-list {
+        padding-left: 1.2rem;
+    }
+
+    .manual-list li {
+        margin-bottom: 0.5rem;
+    }
+
+    .manual-list ul {
+        padding-left: 1.2rem;
+        margin-top: 0.5rem;
+    }
+
+    .card {
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+</style>
+
+<%- include('partials/footer') %> 

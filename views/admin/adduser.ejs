@@ -1,0 +1,126 @@
+<%- include('../partials/header', {title: 'Add New User', path: '/admin/users'}) %>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="gradient-text">Add New User</h1>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="/admin/users" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Users
+      </a>
+    </div>
+  </div>
+
+  <%- include('../partials/alerts') %>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-body">
+          <form action="/admin/users" method="POST" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label for="name" class="form-label">Name</label>
+              <input type="text" class="form-control" id="name" name="name" required>
+              <div class="invalid-feedback">
+                Please provide a name
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+              <div class="invalid-feedback">
+                Please provide a valid email
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required minlength="6">
+              <div class="invalid-feedback">
+                Password must be at least 6 characters
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="role" class="form-label">Role</label>
+              <select class="form-select" id="role" name="role" required>
+                <option value="">Select a role</option>
+                <option value="user">User</option>
+                <option value="first_line">First Line Support</option>
+                <option value="second_line">Second Line Support</option>
+                <option value="admin">Admin</option>
+              </select>
+              <div class="invalid-feedback">
+                Please select a role
+              </div>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                Add User
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">User Guidelines</h5>
+        </div>
+        <div class="card-body">
+          <h6>Name</h6>
+          <p class="text-muted">Enter the user's full name.</p>
+          
+          <h6>Email</h6>
+          <p class="text-muted">Use a valid email address that the user has access to.</p>
+          
+          <h6>Password</h6>
+          <p class="text-muted">Set a secure password (minimum 6 characters).</p>
+          
+          <h6>Role</h6>
+          <p class="text-muted">Select the appropriate role based on the user's responsibilities:</p>
+          <ul class="text-muted">
+            <li><strong>User:</strong> Regular system user</li>
+            <li><strong>First Line Support:</strong> First level support staff</li>
+            <li><strong>Second Line Support:</strong> Second level support staff</li>
+            <li><strong>Admin:</strong> System administrator</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation
+  (function() {
+    'use strict';
+    
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        } else {
+          // Show loading spinner
+          const submitBtn = form.querySelector('button[type="submit"]');
+          const spinner = submitBtn.querySelector('.spinner-border');
+          submitBtn.disabled = true;
+          spinner.classList.remove('d-none');
+        }
+        
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
+
+<%- include('../partials/footer') %> 

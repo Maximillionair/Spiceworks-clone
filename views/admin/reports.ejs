@@ -1,0 +1,255 @@
+<%- include('../partials/header', {title: 'Reports', path: '/admin/reports'}) %>
+
+<div class="container mt-4">
+  <h1 class="gradient-text mb-4">Reports & Analytics</h1>
+  
+  <%- include('../partials/alerts') %>
+
+  <!-- Date Range Filter -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-calendar-range"></i> Filter Reports</h5>
+    </div>
+    <div class="card-body">
+      <form action="/admin/reports" method="GET" class="row g-3">
+        <div class="col-md-4">
+          <label for="startDate" class="form-label">Start Date</label>
+          <input type="date" class="form-control" id="startDate" name="startDate" value="<%= startDate || '' %>">
+        </div>
+        <div class="col-md-4">
+          <label for="endDate" class="form-label">End Date</label>
+          <input type="date" class="form-control" id="endDate" name="endDate" value="<%= endDate || '' %>">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ticket Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card stat-card">
+        <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-ticket-detailed"></i>
+          </div>
+          <h5 class="card-title">Total Tickets</h5>
+          <h2><%= stats.totalTickets || 0 %></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card">
+        <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-exclamation-circle"></i>
+          </div>
+          <h5 class="card-title">Open Tickets</h5>
+          <h2 class="text-danger"><%= stats.openTickets || 0 %></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card">
+        <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-arrow-repeat"></i>
+          </div>
+          <h5 class="card-title">In Progress</h5>
+          <h2 class="text-warning"><%= stats.inProgressTickets || 0 %></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stat-card">
+        <div class="card-body text-center">
+          <div class="stat-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <h5 class="card-title">Resolved</h5>
+          <h2 class="text-success"><%= stats.resolvedTickets || 0 %></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Distribution -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Tickets by Category</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Count</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (stats.categories && Object.keys(stats.categories).length > 0) { %>
+                  <% Object.entries(stats.categories).forEach(([category, count]) => { %>
+                    <tr>
+                      <td><%= category %></td>
+                      <td><%= count %></td>
+                      <td>
+                        <div class="progress">
+                          <div class="progress-bar" role="progressbar" style="width: <%= (count / stats.totalTickets * 100).toFixed(1) %>%">
+                            <%= (count / stats.totalTickets * 100).toFixed(1) %>%
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="3" class="text-center">No category data available</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Priority Distribution -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-flag"></i> Tickets by Priority</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Priority</th>
+                  <th>Count</th>
+                  <th>Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (stats.priorities && Object.keys(stats.priorities).length > 0) { %>
+                  <% Object.entries(stats.priorities).forEach(([priority, count]) => { %>
+                    <tr>
+                      <td>
+                        <span class="badge <%= priority === 'High' ? 'bg-danger' : (priority === 'Medium' ? 'bg-warning' : 'bg-info') %>">
+                          <%= priority %>
+                        </span>
+                      </td>
+                      <td><%= count %></td>
+                      <td>
+                        <div class="progress">
+                          <div class="progress-bar" role="progressbar" style="width: <%= (count / stats.totalTickets * 100).toFixed(1) %>%">
+                            <%= (count / stats.totalTickets * 100).toFixed(1) %>%
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="3" class="text-center">No priority data available</td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolution Time -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-clock-history"></i> Average Resolution Time</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="text-center">
+            <h3><%= stats.avgResolutionTime ? stats.avgResolutionTime.toFixed(1) : 0 %></h3>
+            <p class="text-muted">Hours</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-center">
+            <h3><%= stats.avgResolutionTimeByPriority ? Object.keys(stats.avgResolutionTimeByPriority).length : 0 %></h3>
+            <p class="text-muted">Priority Categories</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="text-center">
+            <h3><%= stats.avgResolutionTimeByCategory ? Object.keys(stats.avgResolutionTimeByCategory).length : 0 %></h3>
+            <p class="text-muted">Ticket Categories</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Options -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-download"></i> Export Reports</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <a href="/admin/reports/export?type=tickets&format=csv" class="btn btn-outline-primary w-100 mb-2">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Export Tickets (CSV)
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="/admin/reports/export?type=users&format=csv" class="btn btn-outline-primary w-100 mb-2">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Export Users (CSV)
+          </a>
+        </div>
+        <div class="col-md-4">
+          <a href="/admin/reports/export?type=summary&format=pdf" class="btn btn-outline-primary w-100 mb-2">
+            <i class="bi bi-file-earmark-pdf"></i> Export Summary (PDF)
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .stat-card {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  
+  .progress {
+    height: 20px;
+    background-color: var(--dark-hover);
+  }
+  
+  .progress-bar {
+    background-color: var(--primary-color);
+  }
+</style>
+
+<%- include('../partials/footer') %> 
