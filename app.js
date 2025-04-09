@@ -37,42 +37,30 @@ app.use(morgan('dev'));
 
 // Security headers
 // Conditionally apply Helmet based on environment
-if (process.env.NODE_ENV === 'production') {
-  // Full security settings for production
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: ["'self'"]
-      }
-    },
-    // Force HTTPS in production
-    hsts: {
-      maxAge: 15552000, // 180 days in seconds
-      includeSubDomains: true
+// Security headers configuration
+const helmetConfig = {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'http:'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com', 'http:'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'http:'],
+      imgSrc: ["'self'", 'data:', 'https:', 'http:'],
+      connectSrc: ["'self'", 'http:']
     }
-  }));
-} else {
-  // Relaxed security for development
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'http://localhost:*'],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com', 'http://localhost:*'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'http://localhost:*'],
-        imgSrc: ["'self'", 'data:', 'https:', 'http://localhost:*'],
-        connectSrc: ["'self'", 'http://localhost:*']
-      }
-    },
-    // Disable HSTS for development
-    hsts: false
-  }));
-}
+  },
+  // Disable HSTS completely
+  hsts: false,
+  // Disable forcing HTTPS
+  referrerPolicy: { policy: 'no-referrer-when-downgrade' },
+  // Allow HTTP
+  xssFilter: true,
+  noSniff: true,
+  frameguard: true
+};
+
+// Apply Helmet with the configuration
+app.use(helmet(helmetConfig));
 
 // Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
