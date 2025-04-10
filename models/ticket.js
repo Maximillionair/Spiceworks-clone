@@ -26,7 +26,7 @@ const ticketSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['Hardware', 'Software', 'Network', 'Access', 'Other'],
+        enum: ['Hardware', 'Software', 'Network', 'Account', 'Other'],
         required: [true, 'Category is required']
     },
     user: {
